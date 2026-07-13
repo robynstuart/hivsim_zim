@@ -1,15 +1,7 @@
 """
-HIVsim Zimbabwe: HIV-only model on the Starsim / STIsim stack.
-
-Slim wrapper around stisim's HIV module + StructuredSexual network +
-Zimbabwe demographics. Calibration parameters (HIV beta, initial-prev
-scaling, network shape) can be overridden via `calib_pars`.
-
-The calibration this repo ships with was joint HIV + syphilis + NG/CT/TV/BV
-in the sti_notification project. When run HIV-only, dropping the STIs
-removes weak HIV-syph coupling; HIV trajectories are essentially unchanged
-because the coupling in that calibration was `hiv -> syph` (susceptibility
-of HIV+ to syph), not the reverse.
+HIVsim Zimbabwe: HIV-only model created using STIsim.
+Calibration parameters (HIV beta, initial-prev scaling, network shape)
+can be overridden via `calib_pars`.
 """
 
 import pandas as pd
@@ -42,23 +34,30 @@ def apply_calib_pars(sim, calib_pars):
     """Override module parameters from a calibration row.
 
     `calib_pars` is a dict keyed on `module.param`, e.g.
-    {'hiv.beta_m2f': 0.012, 'structuredsexual.prop_f0': 0.7}.
+    {'hiv.beta_m2f': 0.012, 'structuredsexual.dur_sw': 5.0}.
 
     stisim's Sim stores modules in lists rather than dicts, so we
-    resolve each override by matching module.name.
+    resolve each override by matching module.name. Values that map
+    onto starsim distributions (e.g. `dur_sw`) go through `.set(mean=..)`;
+    plain scalars overwrite directly.
     """
     if not calib_pars:
         return sim
     for key, val in calib_pars.items():
         mod_name, par = key.split('.', 1)
-        # Search across diseases, networks, and connectors.
-        containers = [sim.diseases, sim.networks]
-        if getattr(sim, 'connectors', None):
-            containers.append(sim.connectors)
-        for container in containers:
-            for mod in container.values() if hasattr(container, 'values') else container:
+        for category in ('diseases', 'networks', 'interventions',
+                         'connectors', 'analyzers', 'demographics'):
+            container = sim.pars.get(category)
+            if not container:
+                continue
+            for mod in container:
                 if getattr(mod, 'name', None) == mod_name:
-                    mod.pars[par] = val
+                    existing = mod.pars.get(par) if hasattr(mod, 'pars') else None
+                    if hasattr(existing, 'set'):
+                        existing.set(mean=val)
+                    else:
+                        mod.pars[par] = val
+                    break
     return sim
 
 
@@ -83,7 +82,9 @@ def make_sim(seed=1, n_agents=1e4, start=1985, stop=2040,
         networks=networks,
         interventions=interventions,
     )
-    sim.init()
+    # Apply calib pars BEFORE init: while sim.pars containers are still lists.
+    # After sim.init() they become objdicts/ndicts and the list-iteration
+    # in apply_calib_pars silently no-ops.
     apply_calib_pars(sim, calib_pars)
     return sim
 
