@@ -1,0 +1,352 @@
+[Title] STIsim: a co-transmission model of gonorrhea, chlamydia, trichomoniasis, and HIV
+
+
+
+
+[Heading 1] STI model parameters
+
+[normal] Table S1. Parameter sources for models of NG, CT, and TV. LogN is the log-normal distribution.
+
+
+[Heading 1] Zimbabwe’s national VDS treatment guidelines
+[normal] Figure S1 reproduces Zimbabwe’s national guidelines for the management of vaginal discharge syndrome (VDS). According to these guidelines, women should be given a risk assessment to determine whether treatment for NG and CT is indicated, ideally with the addition of a genital examination with/without speculum depending on patient preferences. Particular factors that should indicate treatment for NG and CT include having a partner who has reported discharge or ulcers; being under 25 years; being unmarried; or having a new/more than one sexual partner in the past three months. Even if a risk assessment is negative, however, treatment for NG+CT should be given if symptoms are considered to be consistent with cervical infection, e.g. profuse/offensive yellow, green or pus-like discharge.
+
+
+
+[Heading 1] HIV model 
+[normal] In addition to modeling the three curable STIs contributing to VDS, we model HIV transmission, progression, and treatment. We include HIV for two reasons: 1) to leverage the relatively robust data on HIV prevalence, incidence, mortality, and treatment over time to improve calibration of the underlying sexual network; 2) to capture the effects of HIV in shaping the current and future epidemiology of STIs in Zimbabwe, given the well-established interdependence between these infections. Although not yet clearly demonstrated in practice (16–21), there is some evidence that improved management of STIs may lead to reductions in HIV incidence (17). 
+
+[normal] Several of the authors of this paper have previously published documented, tested, and validated models of HIV, including the Optima HIV model (22–25) and the EMOD-HIV model (26,27). To develop the model of HIV used in this paper, we drew heavily upon our previously published work to inform parameter values, model structure, and other assumptions.
+
+[Heading 2] Natural history
+[Heading 3] Untreated infection
+[Heading 4] Acute and latent infection
+[normal] Within our model, we use CD4 counts as the key metric for determining an individual's transmissibility and health outcomes. Prior to infection, all agents begin with a baseline level of CD4 cells. There is evidence of notable variation in baseline CD4 counts for HIV-negative individuals both between individuals and across geographies (28). We assume that the baseline level is normally distributed with a mean of 800 and standard deviation of 50 in line with available studies of similar populations (29–31). Upon an infection, individuals enter an initial acute stage of infection, characterized by rapidly expanding viral load and falling CD4 counts (32). This initial acute phase is estimated to last 2.90 (1.23-6.00) months (33); we represent this by drawing the distribution of acute infection from a log-normal distribution with mean of 3 months and standard deviation of 1 month. During this phase, we assume that CD4 levels decline linearly to reach an initial latent value cd4_latent ~ N(500, 50). 
+
+[normal] Latent infection is a chronic and largely symptomless phase of infection, during which CD4 counts remain relatively stable or gradually declining. The CASCADE study followed ~18,500 individuals and found that the median time from seroconversion to CD4 of 500 was 1.19 (1.12–1.26) years, 4.19 (4.09–4.28) years to CD4 of 350, and 7.93 (7.76–8.09) years until CD4 of 200. In our model, we simplify this process by drawing an overall duration of latent infection from a log-normal distribution with a mean of 12 years and standard deviation of 3 years. During this time, we assume that CD4 levels decline linearly from 500 to 200. 
+[Heading 4] Late-stage infection, AIDS, and AIDS-related death
+[normal] After this time, CD4 counts begin to decline more rapidly as individuals enter late-stage infection. We again assume that individual CD4 counts decline linearly over this phase, beginning from the level at the conclusion of their latent phase and declining down to zero (corresponding to AIDS-related death) over a period of time which we take to be log-normally distributed with a mean of  3 years, in line with the parameter values used in the Optima HIV model (23).
+[Heading 4] Mortality
+[normal] People with HIV who do not receive treatment are exposed to additional mortality risk throughout the course of their HIV infection. These mortality rates were researched extensively for the Optima HIV model and are documented in the parameter guide (34). These mortality rates are documented in Table S2.
+
+[normal] Table S2: Excess mortality rates associated with HIV by CD4 count
+[Heading 3] Treated infection
+[Heading 4] CD4 reconstitution 
+[normal] Effective antiretroviral treatment (ART) can suppress viral load (thereby virtually eliminating the risk of transmission) and reconstitute an individual’s CD4 counts (35–37). There is evidence to suggest that an individual’s potential CD4 level (i.e. the level they will be able to attain after stabilizing on ART) is dependent on their CD4 nadir (i.e. their CD4 level prior to initiating treatment) (38,39). When an individual initiates treatment, we calculate their potential CD4 count as: 
+[normal] .
+[normal] After initiating ART, an individual’s CD4 count is assumed to increase from pre-ART levels up to this potential count, following a logarithmic growth function defined as:
+
+
+
+[normal] where t is the number of months since initiating treatment, and k is a growth parameter selected so that the overall CD4 reconstitution function corresponds to those that are used in the EMOD-HIV model for those with CD4 nadirs of 50 (40). CD4 reconstitution curves for various CD4 nadirs are shown in Figure S2. 
+
+
+[normal] Figure S2: CD4 reconstitution after commencing ART is assumed to follow a logistic growth curve, whose saturation point depends on the CD4 nadir at initialization.
+[Heading 4] Viral dynamics
+[normal] Virally suppressive ART has been shown to be highly effective at preventing transmission of HIV, with an estimated 93% reduction in linked transmissions in the pivotal Cohen study (37). Other studies have estimated even greater reductions, finding either no or very few instances of transmission in serodiscordant couples with a virally suppressed partner (41,42). Because our model does not differentiate between those who are virally suppressed vs not, we assume that all individuals on ART are 92.5% less transmissible, which roughly corresponds to 90% of individuals being virally suppressed (and therefore 96% less transmissible taking the average of results across partner studies (37,41,42)), and the remaining 10% not being virally suppressed (and therefore 50% less transmissible following the Optima HIV model assumptions (34)). 
+
+[normal] We assume that ART takes 6 months before reaching full efficacy in preventing transmission, and over the first 6 months of treatment, we assume that relative transmissibility declines linearly until it reaches 7.5% of its untreated level after 6 months. If an individual stops ART, we assume that their viral load immediately rebounds to its untreated levels. 
+
+[normal] We also assume increases in relative transmissibility during both the early acute and the late stages of infection. Following the approach used in the Optima HIV model, we set individuals in acute-stage infection to be 5.6x more infectious (43) and individuals in late-stage infection to be 7.2x more infectious compared to people in the latent phase of infection (34). 
+[Heading 4] CD4 decline after treatment cessation
+[normal] For individuals that stop ART, we draw their life expectancy post-ART from a normal distribution. The mean of this normal distribution depends on their CD4 count prior to initiating ART (their nadir levels), their treatment-stabilized potential CD4 count, and the CD4 count that they registered immediately before stopping treatment. We model this as:
+[normal] .
+[normal] Table S3 illustrates the modeled life expectancies of people who initiated and stopped ART with varying CD4 counts. 
+
+[normal] Table S3: Modeled life expectancies of people after stopping ART depend on both CD4 nadir and the number of months on treatment.
+
+[normal] After we have drawn the life expectancy for individuals who have stopped ART, their CD4 counts are assumed to linearly decline from the time at which they stopped treatment until AIDS-related death. Note that death may occur before their sampled life expectancy if they die of opportunistic infection or non-HIV-related causes beforehand.
+
+[normal] It is common for individuals to start and stop ART multiple times over the course of their lives. Within the model, individuals who reinitiate on ART after stopping will once again experience CD4 reconstitution following the functions described in Figure S2.
+
+[Heading 2] Transmission 
+[normal] For sexual transmission, we use an estimated per-act transmission probability of 0.04% (0.01%-0.14%) for female-to-male transmission and 0.08% (0.06%-0.11%) for male-to-female transmission, following the Optima HIV model which was based on a 2009 systematic review and meta-analysis of heterosexual risk of HIV transmission (34,44). For maternal transmission, we assume an overall transmission risk of 36.7% for breastfeeding mothers and 20.5% (14.0%-27.0%) for non-breastfeeding mothers, again following the Optima HIV model which was based on a randomized clinical trial of 400 women (45). 
+
+[Heading 2] Care-seeking, testing, and treatment
+[normal] Data on HIV testing rates are available from the DHS and from the Zimbabwe PHIA study (46,47). We capture four different modes of HIV testing: symptomatic testing rates for those with AIDS (CD4<200), testing rates among female sex workers (FSW), testing rates at antenatal clinics (ANC), and other general population testing rates. Values for all of these are adjusted to match the proportion of people living with HIV who are aware of their status, reported as 86.8% in ZIMPHIA. In 2020, this implies annual testing rates of 85% among people with AIDS, 75% among FSW, 90% among ANCs, and 10% among the general population.
+
+[normal] Across populations, there is significant variation in health-seeking behavior and preferences. We do not attempt to model this in a detailed or causative way, but we do assign each individual agent in the model a care-seeking propensity, drawn from a normal distribution centered at 1, with higher values representing individuals who are more likely to seek care. We then use this care-seeking value to help determine which individuals are more likely to commence treatment. Within the model, any individual who tests positive is eligible to commence ART. We do not explicitly capture the CD4 eligibility constraints that were in effect for much of the early era of treatment, but rather we use an ART prioritization algorithm that accounts for both CD4 count and care-seeking behavior, as follows: 
+[normal] Those who have just tested positive to HIV are assumed to be initiated onto ART, with an assumed initiation rate of 90%
+[normal] We then determine the difference between the modeled estimate of the number of people receiving treatment and data from UNAIDS on the number of people receiving ART each year from 1990 to 2023.
+[normal] If this difference is negative, it implies that there is additional available treatment to be distributed, e.g. to people who tested positive at previous points in time but did not immediately initiate treatment, or to people who stopped treatment. Each diagnosed, untreated individual is given a ranking defined as CD4/care-seeking. Individuals are then given treatment starting with those with the lowest values. This implies, for example, that an individual with a low CD4 count of 200 and low care-seeking of 0.5 would be equally likely to commence treatment compared to an individual with a CD4 count of 400 and care-seeking of 1. 
+[normal] If this difference is positive, it implies that the model has overestimated the number of people on treatment. We therefore remove some people. Each treated individual is given a ranking defined as CD4/care-seeking. Individual agents are then removed from treatment starting with those with the highest values, since this corresponds to people with either high CD4 counts or low care-seeking behavior.
+
+[normal] Upon commencing ART, we determine the length of time that a person is likely to continue ART. By default, we assume long durations of treatment (log-normally distributed with a mean of 20 years), since the algorithm above will naturally impose treatment interruptions especially for those with low care-seeking behavior. 
+
+[Heading 1] Interactions between HIV and discharging STIs
+[normal] People living with HIV (PLHIV) have elevated prevalence of STIs. A systematic review of 37 studies of STI-HIV co-infection prevalence estimated the mean point-prevalence of STI infection among PLHIV as 16.3%, with syphilis, NG, CT, and TV being the most common (48). The elevated prevalence is reflective of both behavioral and biological interactions between STIs and HIV. The behavioral interactions will be implicitly accounted for within our modeling framework because there is a common sexual network responsible for all transmission events, so those with riskier sexual behavior will already be at elevated risk of both HIV and STI transmission. In terms of the biological interactions, there are numerous studies pointing to evidence that STIs can increase the risks of both transmission and acquisition of HIV (44,49–53). Table S4 reports the parameters used within the model to capture the relative risks of HIV acquisition and transmission by STI and by sex. These are generally taken as the midpoints of ranges reported across systematic reviews/meta-analyses and large prospective cohort studies comparing HIV risk for those with and without an STI by sex, as referenced in the caption Table S3.
+
+[normal] Table S4: relative risk of HIV acquisition and transmission in those with an STI by sex. Evidence is compiled from (48,52,54). 
+
+[Heading 1] Sexual network
+
+[Heading 2] Age and risk categories
+[normal] We use an age- and risk-structured sexual network where agents are assigned into one of 3 main risk groups, as summarized in Table S5. 
+
+[normal] Table S5: sexual risk group definitions
+
+[normal] On top of these risk groups, a proportion of each of the groups above engages in sex work. We assume that 5% of women will engage in sex work at some point in their lives, and that 20% of men will be clients of sex workers at some point. These values are derived based on an estimated point prevalence of FSW of 1.25%, and assuming that the average duration of sex work is around 4 years (55).
+
+[normal] Several of the key network parameters also vary by age: we divide females into three major age bins: teens (<20), young adults (20-25) and adults (25+).
+
+[Heading 2] Initialization
+[normal] To initialize the sexual network, we assign each agent to a risk group as described above, and we determine their age of sexual debut by drawing from the distributions given in Table S6, which are estimated by fitting to the data on age at first sex as reported in the DHS (46) (Figure S3). We also determine their concurrency preferences, which depend on their risk group and are summarized in Table S7.
+
+[normal] Table S6: distributions of age of sexual debut
+
+
+[normal] Figure S3: Share of females who ever had sex by age. DHS data on the proportion of girls/women who report ever having had sex by age 15, 18, 20, 22, and 25 are shown as blue dots, and the median age at first sex is shown with orange dots. We then treat these data points as quantiles of a lognormal distribution, and estimate the mean and standard deviation, which gives us an inferred distribution of the age of sexual debut (blue line). 
+
+[normal] Table S7: Concurrency parameters 
+
+[normal] At each time point in the simulation when new agents are born, we assign their risk grouping, future participation in sex work, age of sexual debut, and concurrency preferences.
+
+[Heading 2] Pair formation
+[normal] On each time step, we match new pairs as follows:
+[normal] Find agents who are sexually active (i.e. past their age of debut) and have fewer than their desired number of partners (as determined by concurrency parameters). These agents are eligible to look for partners. Some proportion of eligible women (p_pair_form) are assumed to be looking for a partner. This parameter value is estimated as part of model calibration. We use this number to determine how many matches to make.
+[normal] For each female agent seeking a new partner, we determine the preferred age of her partner using the age difference parameters given in Table S8. We then match the males to the females by sorting the male ages and matching them to the desired female ages. 
+[normal] If both partners are in the same risk group, we use a parameter p_matched_stable to determine the share that will form stable relationships. The duration of the stable relationship varies depending on the risk group and the age of the agents (stable_dur_pars). If they have not formed a stable match, they form a casual relationship whose duration also depends on age and risk group (casual_dur_pars). These parameters are all documented in Table S9.
+[normal] If partners are in different risk groups, we use another parameter p_mismatched_casual to determine the share that will form casual relationships (whose duration depends on age and risk group, casual_dur_pars). If they do not form a casual relationship, they form an instantaneous relationship that dissolves on the next time step. 
+
+[normal] Table S8: distribution of the preferred age differences between females in each age/risk group and their partners
+
+[normal] Table S9: probabilities and durations of stable and casual matches
+
+[normal] We then match new sex work pairs separately, as follows:
+[normal] Determine the proportion of clients seeking a sex worker. The annual rate at which clients seek FSWs is assumed to be 6, equivalent to 1 new SW partner every 2 months.
+[normal] Randomly assign a sex worker to each client (age preferences are not used here). Sex workers are allowed to have more than one client.
+
+[Heading 2] Behavior within pairs
+[normal] When pairs form, we determine their annual number of acts (drawn from a log-normal distribution with mean of 90 and standard deviation of 30) and their propensity for condom use. Rates of condom use vary over time and by risk group.
+
+[Heading 2] Pair dissolution
+[normal] Pairs are dissolved at the end of their durations. We do not enforce any lag between ending one relationship and commencing another, but the parameter p_pair_form moderates how quickly females will re-enter relationships. 
+
+
+[Heading 1] Model calibration
+[normal] We split the calibration process into two phases.
+
+[normal] The first phase focuses on the sexual network by adjusting parameters of the network in order to model HIV transmission, progression, and treatment, fitting to data on the overall population size, the number of people living with HIV (PLHIV), HIV prevalence, the number of new HIV infections, and the number of HIV-related deaths.from UNAIDS over 1990-2025 whilst simultaneously aiming for near-alignment with sexual behavior data from Zimbabwe’s DHS (age at first sex, lifetime numbers of sexual partners, and marriage rates by age). We did not treat the sexual behavior data as a fixed calibration target due to common mis-reporting issues with these data. In this first step, we use placeholder estimates of population-level STI prevalence and fit the parameters of the sexual network by minimizing the difference between the model estimates of HIV outcomes and data from the UN WPP and UNAIDS. Table S10 summarizes the parameters that we adjust, the prior ranges of these parameters, and the final parameter values identified by calibration. Figure S4 we show the model fit to the HIV data.
+
+[normal] Building on this calibrated sexual network, the second phase estimated parameters for STI transmissibility, symptomaticity, and care-seeking separately for each of the three implementation scenarios. We varied 7 key parameters in each calibration: the symptomatic share of infections in women for NG (10-20%), CT (10-30%), and TV (15-75%), the proportion of women experiencing VDS who seek clinical care (25-75%), and the male-to-female per-act transmission probability of NG, CT, and TV (2-30%). We fit to STI data on the prevalence of NG, CT, and TV in young women and pregnant women over 1990-2025 (56–58).  Table S11 shows the prior and posterior ranges for the parameters adjusted during this step. By tuning these parameters for each scenario, we can estimate the proportion of women treated consistent with historical prevalence estimates.
+
+[normal] For each calibration, we run 10,000 trials selected using a Bayesian optimization algorithm called Optuna (59), a Python package integrated into STIsim for the purpose of finding the parameters that minimize the normalized sum of absolute differences between the model and the data for each metric and at each timepoint over the period from 1990-2025. 
+
+[normal] Throughout the paper, we report estimates derived from the 500 best-fitting parameter sets. 
+
+[normal] Table S10: prior distributions and posterior estimates for the parameters of the sexual network and HIV transmission estimated by fitting to data on HIV. 
+
+[normal] Figure S4: model calibration to HIV data. Black markers indicate data, which is sourced from UN WPP for the population size and from UNAIDS for all other indicators. The blue lines indicate the mean across the best-fitting 500 simulations (we run 10,000 trial simulations for these calibrations). The shaded areas represent the 50%, 90%, and 95% interquartile ranges from the best-fitting 500 simulations.
+
+
+[normal] Table S11: prior distributions and posterior estimates for the parameters of the STI models.
+
+
+
+[normal] Figure S5: model calibration to STI data. Black markers indicate data, which is sourced from IHME Global Burden of Disease (2019). The blue lines indicate the mean across the best-fitting 500 simulations (we run 10,000 trial simulations for these calibrations). The shaded areas represent the 50%, 90%, and 95% interquartile ranges from the best-fitting 500 simulations.
+
+[Heading 1] Summary of impact of a POC diagnostic 
+
+[normal] Table S12: Summary of impact of a POC diagnostic on overtreatment, undertreatment, and disease burden. SOC=standard of care; POC=point-of-care diagnostic available from 2027; %Δ=estimated percentage difference between the SOC and POC scenarios.
+
+[Heading 1] References
+[normal] 1.	Padeniya TN, Hui BB, Wood JG, Regan DG, Seib KL. Review of mathematical models of Neisseria gonorrhoeae vaccine impact: Implications for vaccine development. Vaccine. 2024 Jul 25;42(19S1):S70–81.
+[normal] 2.	Farley TA, Cohen DA, Elkins W. Asymptomatic sexually transmitted diseases: the case for screening. Preventive Medicine. 2003 Apr 1;36(4):502–9.
+[normal] 3.	Korenromp EL, Sudaryo MK, de Vlas SJ, Gray RH, Sewankambo NK, Serwadda D, et al. What proportion of episodes of gonorrhoea and chlamydia becomes symptomatic? Int J STD AIDS. 2002 Feb 1;13(2):91–101.
+[normal] 4.	Newman L, Rowley J, Vander Hoorn S, Wijesooriya NS, Unemo M, Low N, et al. Global Estimates of the Prevalence and Incidence of Four Curable Sexually Transmitted Infections in 2012 Based on Systematic Review and Global Reporting. PLoS One. 2015;10(12):e0143304.
+[normal] 5.	Price MJ, Ades AE, Soldan K, Welton NJ, Macleod J, Simms I, et al. The natural history of Chlamydia trachomatis infection in women: a multi-parameter evidence synthesis. Health Technol Assess. 2016 Mar;20(22):1–250.
+[normal] 6.	Kaul R, Kimani J, Nagelkerke NJ, Fonck K, Ngugi EN, Keli F, et al. Monthly Antibiotic Chemoprophylaxis and Incidence of Sexually Transmitted Infections and HIV-1 Infection in Kenyan Sex WorkersA Randomized Controlled Trial. JAMA. 2004 Jun 2;291(21):2555–62.
+[normal] 7.	The Global Library of Women’s Medicine [Internet]. [cited 2024 Aug 9]. Trichomoniasis | Article | GLOWM. Available from: http://www.glowm.com/article/heading/vol-12--infections-in-gynecology--trichomoniasis/id/419923
+[normal] 8.	Petrin D, Delgaty K, Bhatt R, Garber G. Clinical and microbiological aspects of Trichomonas vaginalis. Clin Microbiol Rev. 1998 Apr;11(2):300–17.
+[normal] 9.	Bowden F, Garnett G. Trichomonas vaginalis epidemiology: parameterising and analysing a model of treatment interventions. Sex Transm Infect. 2000 Aug;76(4):248–56.
+[normal] 10.	Martín-Sánchez M, Fairley CK, Ong JJ, Maddaford K, Chen MY, Williamson DA, et al. Clinical presentation of asymptomatic and symptomatic women who tested positive for genital gonorrhoea at a sexual health service in Melbourne, Australia. Epidemiology & Infection. 2020 Jan;148:e240.
+[normal] 11.	Van Ommen CE, Malleson S, Grennan T. A practical approach to the diagnosis and management of chlamydia and gonorrhea. CMAJ. 2023 Jun 19;195(24):E844–9.
+[normal] 12.	Schumann JA, Plasner S. Trichomoniasis. In: StatPearls [Internet]. Treasure Island (FL): StatPearls Publishing; 2024 [cited 2024 Sep 5]. Available from: http://www.ncbi.nlm.nih.gov/books/NBK534826/
+[normal] 13.	Kretzschmar M, van Duynhoven YT, Severijnen AJ. Modeling prevention strategies for gonorrhea and Chlamydia using stochastic network simulations. Am J Epidemiol. 1996 Aug 1;144(3):306–17.
+[normal] 14.	Althaus CL, Heijne JCM, Roellin A, Low N. Transmission dynamics of Chlamydia trachomatis affect the impact of screening programmes. Epidemics. 2010 Sep;2(3):123–31.
+[normal] 15.	Marfatia YS, Pandya I, Mehta K. Condoms: Past, present, and future. Indian J Sex Transm Dis AIDS. 2015;36(2):133–9.
+[normal] 16.	Ng BE, Butler LM, Horvath T, Rutherford GW. Population‐based biomedical sexually transmitted infection control interventions for reducing HIV infection - Ng, BE - 2011 | Cochrane Library. [cited 2024 Oct 23]; Available from: https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD001220.pub3/full
+[normal] 17.	Grosskurth H, Mosha F, Todd J, Mwijarubi E, Klokke A, Senkoro K, et al. Impact of improved treatment of sexually transmitted diseases on HIV infection in rural Tanzania: randomised controlled trial. Lancet. 1995 Aug 26;346(8974):530–6.
+[normal] 18.	Wawer MJ, Sewankambo NK, Serwadda D, Quinn TC, Paxton LA, Kiwanuka N, et al. Control of sexually transmitted diseases for AIDS prevention in Uganda: a randomised community trial. Rakai Project Study Group. Lancet. 1999 Feb 13;353(9152):525–35.
+[normal] 19.	Kamali A, Quigley M, Nakiyingi J, Kinsman J, Kengeya-Kayondo J, Gopal R, et al. Syndromic management of sexually-transmitted infections and behaviour change interventions on transmission of HIV-1 in rural Uganda: a community randomised trial. Lancet. 2003 Feb 22;361(9358):645–52.
+[normal] 20.	Gregson S, Adamson S, Papaya S, Mundondo J, Nyamukapa CA, Mason PR, et al. Impact and Process Evaluation of Integrated Community and Clinic-Based HIV-1 Control: A Cluster-Randomised Trial in Eastern Zimbabwe. PLOS Medicine. 2007 Mar 27;4(3):e102.
+[normal] 21.	Orroth KK, White RG, Korenromp EL, Bakker R, Changalucha J, Habbema JDF, et al. Empirical observations underestimate the proportion of human immunodeficiency virus infections attributable to sexually transmitted diseases in the Mwanza and Rakai sexually transmitted disease treatment trials: Simulation results. Sex Transm Dis. 2006 Sep;33(9):536–44.
+[normal] 22.	Kerr CC, Stuart RM, Gray RT, Shattock AJ, Fraser-Hurt N, Benedikt C, et al. Optima: A Model for HIV Epidemic Analysis, Program Prioritization, and Resource Optimization. JAIDS Journal of Acquired Immune Deficiency Syndromes. 2015 Jul 1;69(3):365.
+[normal] 23.	Kerr CC, Stuart RM, Kedziora DJ, Brown A, Abeysuriya R, Chadderdon GL, et al. Optima HIV Methodology and Approach. In: Tackling the World’s Fastest-Growing HIV Epidemic More Efficient HIV Responses in Eastern Europe and Central Asia. Washington, DC: World Bank: Human Development Perspectives; 2020.
+[normal] 24.	Kelly SL, Martin-Hughes R, Stuart RM, Yap XF, Kedziora DJ, Grantham KL, et al. The global Optima HIV allocative efficiency model: targeting resources in efforts to end AIDS. The Lancet HIV. 2018 Apr 1;5(4):e190–8.
+[normal] 25.	Stuart RM, Grobicki L, Haghparast-Bidgoli H, Panovska-Griffiths J, Skordis J, Keiser O, et al. How should HIV resources be allocated? Lessons learnt from applying Optima HIV in 23 countries. J Int AIDS Soc. 2018 Apr;21(4):e25097.
+[normal] 26.	Bershteyn A, Gerardin J, Bridenbecker D, Lorton CW, Bloedow J, Baker RS, et al. Implementation and applications of EMOD, an individual-based multi-disease modeling platform. Pathogens and Disease [Internet]. 2018 Jul 1 [cited 2024 Sep 17];76(5). Available from: https://research.wur.nl/en/publications/implementation-and-applications-of-emod-an-individual-based-multi
+[normal] 27.	Bershteyn A, Klein DJ, Eckhoff PA. Age-dependent partnering and the HIV transmission chain: a microsimulation analysis. J R Soc Interface. 2013 Nov 6;10(88):20130613.
+[normal] 28.	Crampin AC, Mwaungulu FD, Ambrose LR, Longwe H, French N. Normal Range of CD4 Cell Counts and Temporal Changes in Two HIVNegative Malawian Populations. [cited 2024 Sep 17]; Available from: https://openaidsjournal.com/VOLUME/5/PAGE/74/FULLTEXT/
+[normal] 29.	Tsegaye A, Messele T, Tilahun T, Hailu E, Sahlu T, Doorly R, et al. Immunohematological reference ranges for adult Ethiopians. Clin Diagn Lab Immunol. 1999 May;6(3):410–4.
+[normal] 30.	Williams BG, Korenromp EL, Gouws E, Schmid GP, Auvert B, Dye C. HIV infection, antiretroviral therapy, and CD4+ cell count distributions in African populations. J Infect Dis. 2006 Nov 15;194(10):1450–8.
+[normal] 31.	Menard D, Mandeng MJ, Tothy MB, Kelembho EK, Gresenguet G, Talarmin A. Immunohematological reference ranges for adults from the Central African Republic. Clin Diagn Lab Immunol. 2003 May;10(3):443–5.
+[normal] 32.	Sabin CA, Lundgren JD. The natural history of HIV infection. Curr Opin HIV AIDS. 2013 Jul;8(4):311–7.
+[normal] 33.	Hollingsworth TD, Anderson RM, Fraser C. HIV-1 transmission, by stage of infection. J Infect Dis. 2008 Sep 1;198(5):687–93.
+[normal] 34.	Kerr CC, Stuart RM, Kelly SL, Wilson DP. Optima HIV User Guide Vol. VI: Parameter Data Sources [Internet]. 2020. Available from: userguide.optimamodel.com
+[normal] 35.	Mocroft A, Phillips AN, Gatell J, Ledergerber B, Fisher M, Clumeck N, et al. Normalisation of CD4 counts in patients with HIV-1 infection and maximum virological suppression who are taking combination antiretroviral therapy: an observational cohort study. Lancet. 2007 Aug 4;370(9585):407–13.
+[normal] 36.	Eaton JW, Johnson LF, Salomon JA, Bärnighausen T, Bendavid E, Bershteyn A, et al. HIV Treatment as Prevention: Systematic Comparison of Mathematical Models of the Potential Impact of Antiretroviral Therapy on HIV Incidence in South Africa. PLOS Medicine. 2012 Jul 10;9(7):e1001245.
+[normal] 37.	Cohen MS, Chen YQ, McCauley M, Gamble T, Hosseinipour MC, Kumarasamy N, et al. Prevention of HIV-1 infection with early antiretroviral therapy. N Engl J Med. 2011 Aug 11;365(6):493–505.
+[normal] 38.	Moore RD, Keruly JC. CD4+ cell count 6 years after commencement of highly active antiretroviral therapy in persons with sustained virologic suppression. Clin Infect Dis. 2007 Feb 1;44(3):441–6.
+[normal] 39.	Michael CG, Kirk O, Mathiesen L, Nielsen SD. The naive CD4+ count in HIV-1-infected patients at time of initiation of highly active antiretroviral therapy is strongly associated with the level of immunological recovery. Scand J Infect Dis. 2002;34(1):45–9.
+[normal] 40.	Institute for Disease Modeling. EMOD HIV model documentation [Internet]. [cited 2024 Sep 17]. Available from: https://docs.idmod.org/projects/emod-hiv/en/2.20_a/hiv-model-overview.html
+[normal] 41.	Rodger AJ, Cambiano V, Bruun T, Vernazza P, Collins S, Degen O, et al. Risk of HIV transmission through condomless sex in serodifferent gay couples with the HIV-positive partner taking suppressive antiretroviral therapy (PARTNER): final results of a multicentre, prospective, observational study. Lancet. 2019 Jun 15;393(10189):2428–38.
+[normal] 42.	Attia S, Egger M, Müller M, Zwahlen M, Low N. Sexual transmission of HIV according to viral load and antiretroviral therapy: systematic review and meta-analysis. AIDS. 2009 Jul 17;23(11):1397–404.
+[normal] 43.	Bellan SE, Dushoff J, Galvani AP, Meyers LA. Reassessment of HIV-1 Acute Phase Infectivity: Accounting for Heterogeneity and Study Design with Simulated Cohorts. PLOS Medicine. 2015 Mar 17;12(3):e1001801.
+[normal] 44.	Boily MC, Baggaley RF, Wang L, Masse B, White RG, Hayes RJ, et al. Heterosexual risk of HIV-1 infection per sexual act: systematic review and meta-analysis of observational studies. Lancet Infect Dis. 2009 Feb;9(2):118–29.
+[normal] 45.	Nduati R, John G, Mbori-Ngacha D, Richardson B, Overbaugh J, Mwatha A, et al. Effect of breastfeeding and formula feeding on transmission of HIV-1: a randomized clinical trial. JAMA. 2000 Mar 1;283(9):1167–74.
+[normal] 46.	Zimbabwe National Statistics Agency, ICF International. Zimbabwe Demographic and Health Survey 2015: Final Report [Internet]. Rockville, Maryland, USA: Zimbabwe National Statistics Agency (ZIMSTAT) and ICF International; 2016. Available from: http://dhsprogram.com/pubs/pdf/FR322/FR322.pdf
+[normal] 47.	PHIA Project [Internet]. [cited 2024 Sep 17]. Zimbabwe Final Report 2020 - PHIA Project %. Available from: https://phia.icap.columbia.edu/zimbabwe2020-final-report/
+[normal] 48.	Kalichman SC, Pellowski J, Turner C. Prevalence of Sexually Transmitted Co-Infections in People Living with HIV/AIDS: Systematic Review with Implications for using HIV Treatments for Prevention. Sex Transm Infect. 2011 Apr;87(3):183–90.
+[normal] 49.	Ng BE, Butler LM, Horvath T, Rutherford GW. Population-based biomedical sexually transmitted infection control interventions for reducing HIV infection. Cochrane Database Syst Rev. 2011 Mar 16;(3):CD001220.
+[normal] 50.	Cohen MS, Council OD, Chen JS. Sexually transmitted infections and HIV in the era of antiretroviral treatment and prevention: the biologic basis for epidemiologic synergy. J Int AIDS Soc. 2019 Aug;22 Suppl 6(Suppl Suppl 6):e25355.
+[normal] 51.	Jarolimova J, Platt LR, Curtis MR, Philpotts LL, Bekker LG, Morroni C, et al. Curable sexually transmitted infections among women with HIV in sub-Saharan Africa. AIDS. 2022 Apr 1;36(5):697–709.
+[normal] 52.	Sexton J, Garnett G, Røttingen JA. Metaanalysis and metaregression in interpreting study variability in the impact of sexually transmitted diseases on susceptibility to HIV infection. Sex Transm Dis. 2005 Jun;32(6):351–7.
+[normal] 53.	Hayes R, Watson-Jones D, Celum C, van de Wijgert J, Wasserheit J. Treatment of sexually transmitted infections for HIV prevention: end of the road or new beginning? AIDS. 2010 Oct;24 Suppl 4(0 4):S15-26.
+[normal] 54.	Johnson LF, Lewis DA. The effect of genital tract infections on HIV-1 shedding in the genital tract: a systematic review and meta-analysis. Sex Transm Dis. 2008 Nov;35(11):946–59.
+[normal] 55.	Fearon E, Chabata ST, Magutshwa S, Ndori-Mharadze T, Musemburi S, Chidawanyika H, et al. Estimating the Population Size of Female Sex Workers in Zimbabwe: Comparison of Estimates Obtained Using Different Methods in Twenty Sites and Development of a National-Level Estimate. J Acquir Immune Defic Syndr. 2020 Sep 1;85(1):30–8.
+[normal] 56.	Martin K, Olaru ID, Buwu N, Bandason T, Marks M, Dauya E, et al. Uptake of and factors associated with testing for sexually transmitted infections in community-based settings among youth in Zimbabwe: a mixed-methods study. The Lancet Child & Adolescent Health. 2021 Feb 1;5(2):122–32.
+[normal] 57.	Chikwari CD, Simms V, Kranzer K, Dauya E, Bandason T, Tembo M, et al. Evaluation of a community-based aetiological approach for sexually transmitted infections management for youth in Zimbabwe: intervention findings from the STICH cluster randomised trial. eClinicalMedicine. 2023 Aug 3;62:102125.
+[normal] 58.	Martin K, Chikwari CD, Dauya E, Mackworth-Young C, Tucker JD, Simms V, et al. Integrated Antenatal HIV, Hepatitis B, & Curable STI Testing: A Pragmatic Study in Harare, Zimbabwe.
+[normal] 59.	Akiba T, Sano S, Yanase T, Ohta T, Koyama M. Optuna: A Next-generation Hyperparameter Optimization Framework. In: Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery & Data Mining [Internet]. New York, NY, USA: Association for Computing Machinery; 2019 [cited 2022 Nov 20]. p. 2623–31. (KDD ’19). Available from: https://doi.org/10.1145/3292500.3330701
+
+=== TABLE 1 ===
+Parameter | Interpretation | Gonorrhea (NG) | Chlamydia (CT) | Trichomoniasis (TV)
+p_symp | Percentage who develop symptoms | Women: 10-20%
+Men: 65%
+Notes: Wide ranges in symptomaticity are reported in the literature, with 50–90% of infections in women reported to be asymptomatic (1). Observational studies have reported 45% (2) and 55% (3) for males. We assume 65% of men develop symptoms, in line with (4). The symptomatic proportion of women is estimated during calibration from the range 10-20%. | Women: 10-30%
+Men: 54%
+Notes: For women, the estimated proportion of asymptomatic incident infections ranges from 75-85% (4–6). For men, . We assume 54% of men are symptomatic (4). The symptomatic proportion of women is estimated during calibration from the range 10-30%. | Women: 15-75%
+Men: 50%
+Notes: Estimates of the share of women with asymptomatic infection range from 25-85% (7,8). While there is little data on men, we follow assumptions used by Bowden and Garnett (9) that 50% of men will develop symptoms. The symptomatic proportion of women is estimated during calibration from the range 15-75%.
+p_clear | Percentage of infections that naturally clear | Women: 100%
+Men: 100%
+Notes: All infections are assumed to eventually clear. | Women: 100%
+Men: 100%
+Notes: All infections are assumed to eventually clear. | Women: 10%
+Men: 100%
+Notes: Bowden & Garnett argue that an extremely long duration of infection best explains the high prevalence in older age groups (9). Following their model, we assume 90% of women do not clear infection.
+dur_presymp | Time before symptoms appear (weeks) | Women: LogN(1, 12)
+Men: LogN(0.25, 1)
+Notes: For women, the mean time between last sexual contact and onset of symptoms has been observed to take 1 week (10), however symptoms might take months to appear. Symptoms in men appear within days. | Women: LogN(1, 12)
+Men: LogN(0.25, 1)
+Notes: Symptoms in men appear within days. In women, symptoms may appear several months after infection (11). We use a lognormal distribution in which most symptoms in women appear within 1-2 weeks but longer presymptomatic periods are possible. | Women: LogN(1, 12)
+Men: LogN(0.25, 1)
+Notes: In women, T. vaginalis has an incubation period of 5-28 days (12). For men, symptoms should appear within days.
+dur_asymp2clear | Duration of asymptomatic infection before clearance (months) | Women: LogN(6, 1.5)
+Men: LogN(4, 1.5)
+Notes: For asymptomatic women, the duration of infection is estimated at 3-12 months, and for asymptomatic men, 3-6 months (13). | Women: LogN(14, 1.5)
+Men: LogN(14, 1.5)
+Notes: The duration of asymptomatic infection is estimated at 14-15 months for men and women (4,14) | Women: LogN(36, 3.5)
+Men: LogN(4, 1)
+Notes: Bowden and Garnett assume an average duration of infection in men of 4 months (9) For the 10% of women who spontaneously clear, the average duration of infection is assumed to be 24 months (9).
+dur_symp2clear | Duration of symptomatic infection before clearance (months) | Women: LogN(1, 1)
+Men: LogN(0.5, 1)
+Notes: For symptomatic women, 3-45 days; for symptomatic men, 3-30 days (13). | Women: LogN(14, 1.5)
+Men: LogN(14, 1.5)
+Notes: As above | Women: LogN(4.5, 1)
+Men: LogN(2.5, 1)
+Notes:
+beta | Per-act transmission | Estimated: ~12% per act depending on implementation scenario; see Table S10 | Estimated: ~15% per act depending on implementation scenario; see Table S10 | Estimated: ~14% per act depending on implementation scenario; see Table S10
+eff_condom | Efficacy of condoms  (reduction in beta per act) | 90% (15) | 70% (15) | 90% (15)
+
+=== TABLE 2 ===
+CD4 level | > 500 | [350, 500] | [200, 350] | [50, 200] | < 50
+Mortality | 0.003 | 0.005 | 0.01 | 0.05 | 0.3
+
+=== TABLE 3 ===
+ |  | Months on treatment | Months on treatment | Months on treatment | Months on treatment | Months on treatment | Months on treatment | Months on treatment
+ |  | 6 | 12 | 24 | 36 | 48 | 60 | 120
+CD4 nadir | 600 | 5.08 | 5.54 | 6.09 | 6.30 | 6.37 | 6.39 | 6.40
+CD4 nadir | 500 | 4.41 | 5.04 | 5.79 | 6.08 | 6.17 | 6.20 | 6.21
+CD4 nadir | 400 | 3.77 | 4.54 | 5.47 | 5.82 | 5.94 | 5.98 | 5.99
+CD4 nadir | 300 | 3.17 | 4.05 | 5.11 | 5.51 | 5.65 | 5.69 | 5.70
+CD4 nadir | 200 | 2.59 | 3.53 | 4.66 | 5.10 | 5.24 | 5.28 | 5.30
+CD4 nadir | 100 | 1.98 | 2.89 | 3.99 | 4.41 | 4.54 | 4.59 | 4.61
+CD4 nadir | 50 | 1.55 | 2.37 | 3.36 | 3.74 | 3.86 | 3.90 | 3.91
+
+=== TABLE 4 ===
+ | RR of HIV acquisition | RR of HIV acquisition | RR of HIV acquisition | RR of HIV transmission | RR of HIV transmission | RR of HIV transmission
+ | NG | CT | TV | NG | CT | TV
+F | 3.0 (1.4–7.4) | 2.1 (1.2–3.0) | 1.5 (1.2–2.2) | 1.6 (1.1–2.4) | 1.8 (1.1–3.1) | 1.0 (0.9–1.3)
+M | 3.0 (1.9–4.0) | 1.0 (0.8–3.9) | - | 1.8 (1.2–2.7) | 1.8 (1.1–3.1) | -
+
+=== TABLE 5 ===
+Level | Description | Share of total population | Source
+Level 0 | Marry and remain married to a single partner throughout their lifetime, with no concurrency for women and limited concurrency for men. | Estimated during calibration – see Table S11 | Calibrated
+Level 1 | Marry and then divorce or who have concurrent partner(s) during their marriage | Calculated by subtracting the proportions of level 0 and level 2 agents from 1 | Calculated
+Level 2 | Never marry | Women: 1%
+Men: 2% | Assumption
+
+=== TABLE 6 ===
+ | Distribution | Sources/notes
+Women | LogN(20,3) | Estimated by fitting to the data shown in Figure S3
+Men | LogN(21,3) | Estimated by fitting to the data shown in Figure S3
+
+=== TABLE 7 ===
+ | % preferring >1 simultaneous partner | Sources/notes
+Level 0 | Women: 0%
+Men: 1% | Value for women is 0% by definition of this risk group. Value for men is an assumption.
+Level 1 | Women: 1-5%
+Men: 10-20% | Parameters estimated during model calibration.
+Level 2 | Women: 10%
+Men: 50% | Assumptions
+
+=== TABLE 8 ===
+ | Teens (10-19) | Young adults (20-25) | Adults (25+)
+Level 0 | N(7, 3) | N(8, 3) | N(8, 3)
+Level 1 | N(6, 3) | N(7, 3) | N(7, 3)
+Level 2 | N(5, 1) | N(5, 2) | N(5, 2)
+
+=== TABLE 9 ===
+Parameter | Explanation | Value
+p_pair_form | Proportion of unpartnered women who are seeking a partner | Estimated during calibration
+p_matched_stable | Probability of a stable pair forming between matched people | L0=0.9, L1=0.5, L2=0
+stable_dur_pars | Duration of a stable relationship | L0~LogN(100,1), L1~LogN(8,2), L2~LogN(1,1)
+casual_dur_pars | Duration of a casual relationship | L0~LogN(1,1), L1~LogN(0.5,1), L2~LogN(0.5,1)
+p_mismatched_casual | Probability of a casual pair forming between mismatched people | 0.5
+
+=== TABLE 10 ===
+Parameter | Prior distribution | Posterior estimates: mean, 95% intervals
+Per-act transmission probability from males to females | Unif(0.001-0.1) | 0.036 (0.033–0.039)
+Proportion of women in lowest risk-group (level 0) | Unif(0.50-0.9) | 0.786 (0.685–0.880)
+Proportion of men in lowest risk-group (level 0) | Unif(0.50-0.9) | 0.832 (0.647–0.898)
+% of level 1 females preferring >1 simultaneous partner | Unif(0.01–0.2) | 0.162 (0.046–0.197)
+% of level 1 males preferring >1 simultaneous partner | Unif(0.01–0.2) | 0.106 (0.015–0.193)
+Proportion of unpartnered women seeking a partner | Unif(0.4–0.9) | 0.577 (0.510–0.708)
+
+=== TABLE 11 ===
+Parameter | Prior distribution | Posterior estimates: mean, 95% intervals | Posterior estimates: mean, 95% intervals | Posterior estimates: mean, 95% intervals
+ |  | Treat-half | Treat-most | Treat-all
+Per-act transmission probability, males to females: NG | Unif(0.02-0.2) | 0.122 (0.113–0.130) | 0.126 (0.117–0.133) | 0.129 (0.121–0.141)
+Per-act transmission probability, males to females: CT | Unif(0.02-0.2) | 0.154 (0.134–0.174) | 0.156 (0.141–0.179) | 0.163 (0.150–0.175)
+Per-act transmission probability, males to females: TV | Unif(0.02-0.2) | 0.110 (0.093–0.158) | 0.156 (0.138–0.181) | 0.158 (0.142–0.173)
+Symptomatic proportion among women: NG | Unif(0.1–0.2) | 0.173 (0.104–0.197) | 0.156 (0.116–0.188) | 0.136 (0.115–0.174)
+Symptomatic proportion among women: CT | Unif(0.1–0.3) | 0.227 (0.203–0.293) | 0.245 (0.214–0.292) | 0.242 (0.202–0.295)
+Symptomatic proportion among women: TV | Unif(0.15–0.75) | 0.398 (0.204–0.679) | 0.623 (0.541–0.746) | 0.636 (0.596–0.670)
+Proportion of women with VDS who seek care | Unif(0.25–0.75) | 0.573 (0.269–0.728) | 0.653 (0.496–0.735) | 0.467 (0.362–0.651)
+
+=== TABLE 12 ===
+ |  | Overtreatment 2027-2040
+(cumulative, thousands) | Overtreatment 2027-2040
+(cumulative, thousands) | Overtreatment 2027-2040
+(cumulative, thousands) | Undertreatment 2027-2040
+(cumulative, thousands) | Undertreatment 2027-2040
+(cumulative, thousands) | Undertreatment 2027-2040
+(cumulative, thousands) | Disease burden
+(2040, thousands) | Disease burden
+(2040, thousands) | Disease burden
+(2040, thousands)
+ |  | Treat
+all | Treat most | Treat half | Treat
+all | Treat most | Treat half | Treat
+all | Treat most | Treat half
+NG | SOC | 3,457 | 2,480 | 2,738 | 0 | 296 | 588 | 223 | 215 | 225
+NG | POC | 195 | 262 | 381 | 0 | 0 | 0 | 222 | 182 | 170
+NG | %Δ | 94% | 89% | 86% | - | 100% | 100% | 0% | 15% | 24%
+CT | SOC | 2,311 | 1,497 | 1,892 | 0 | 903 | 1,444 | 757 | 764 | 752
+CT | POC | 124 | 155 | 233 | 0 | 0 | 0 | 758 | 725 | 689
+CT | %Δ | 95% | 90% | 88% | - | 100% | 100% | 0% | 5% | 8%
+TV | SOC | 2,135 | 1,871 | 1,700 | 0 | 878 | 1,613 | 1,392 | 1,314 | 1,409
+TV | POC | 1,728 | 1,812 | 1,713 | 0 | 0 | 0 | 1,393 | 1,257 | 1,309
+TV | %Δ | 19% | 3% | 0% | - | 100% | 100% | 0% | 4% | 7%
