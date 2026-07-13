@@ -47,29 +47,30 @@ LABELS = {
 
 
 def compute_hivsim_shares(df, years):
-    """For each year in `years`, take the ensemble median of the shares."""
+    """Ensemble transmission attribution as a % of total, summing to 100.
+
+    Aggregating raw counts across the ensemble FIRST (sum over draws x seeds)
+    then dividing keeps the four shares self-consistent — taking medians per
+    share independently does not. Missing years get NaN so the bars are blank.
+    """
     d = df[df.year.isin(years)].copy()
-    d['total'] = (d.trans_undiagnosed_per_year
-                  + d.trans_diag_not_on_art_per_year
-                  + d.trans_on_art_per_year
-                  + d.trans_post_art_per_year)
-    d['share_undiag']   = np.where(d.total > 0, d.trans_undiagnosed_per_year     / d.total * 100, np.nan)
-    d['share_diag_no']  = np.where(d.total > 0, d.trans_diag_not_on_art_per_year / d.total * 100, np.nan)
-    d['share_on_art']   = np.where(d.total > 0, d.trans_on_art_per_year          / d.total * 100, np.nan)
-    d['share_post']     = np.where(d.total > 0, d.trans_post_art_per_year        / d.total * 100, np.nan)
-    med = d.groupby('year').median(numeric_only=True)[
-        ['share_undiag', 'share_diag_no', 'share_on_art', 'share_post']]
-    return med.reindex(years)
+    cols_raw = ['trans_undiagnosed_per_year', 'trans_diag_not_on_art_per_year',
+                'trans_on_art_per_year',      'trans_post_art_per_year']
+    agg = d.groupby('year')[cols_raw].sum()
+    totals = agg.sum(axis=1)
+    shares = agg.divide(totals.where(totals > 0, np.nan), axis=0) * 100
+    shares.columns = ['share_undiag', 'share_diag_no', 'share_on_art', 'share_post']
+    return shares.reindex(years)
 
 
-def plot_hivsim_panel(ax, med, years):
+def plot_hivsim_panel(ax, shares, years):
     xs = np.arange(len(years))
     width = 0.85
     bottom = np.zeros(len(years))
+    key_to_col = {'undiag': 'share_undiag', 'diag_no': 'share_diag_no',
+                  'on_art': 'share_on_art', 'post_art': 'share_post'}
     for key in ['undiag', 'diag_no', 'on_art', 'post_art']:
-        col = f'share_{key}' if key != 'post_art' else 'share_post'
-        vals = med[col].to_numpy()
-        vals = np.nan_to_num(vals, nan=0.0)
+        vals = np.nan_to_num(shares[key_to_col[key]].to_numpy(), nan=0.0)
         ax.bar(xs, vals, width, bottom=bottom, color=COLORS[key], label=LABELS[key],
                edgecolor='white', linewidth=0.4)
         bottom = bottom + vals
@@ -86,7 +87,7 @@ def plot_hivsim_panel(ax, med, years):
 def main():
     df = pd.read_parquet(OUT)
     years = list(range(2000, 2041))
-    med = compute_hivsim_shares(df, years)
+    shares = compute_hivsim_shares(df, years)
 
     # Left panel: paper Fig 3B (Zimbabwe subplot images embedded as reference)
     fig = plt.figure(figsize=(14, 6.5))
@@ -109,7 +110,7 @@ def main():
     ax_ref.axis('off')
 
     ax = fig.add_subplot(gs[0, 1])
-    plot_hivsim_panel(ax, med, years)
+    plot_hivsim_panel(ax, shares, years)
     ax.legend(loc='lower left', bbox_to_anchor=(0.0, -0.55), fontsize=9,
               frameon=False, ncol=2, handlelength=1.4)
 

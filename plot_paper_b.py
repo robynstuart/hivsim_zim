@@ -57,9 +57,12 @@ def cascade_summary(df, col):
 
 
 def transmission_shares_at_year(df, year):
-    """For each (draw, seed) at `year`, compute the % share of transmissions
-    coming from each cascade stage. Returns a DataFrame with columns
-    [draw_idx, sub_idx, share_undiag, share_diag_no, share_on_art, share_post].
+    """Per-sim share of transmissions by cascade stage.
+
+    Each sim's four shares sum to 100 by construction. Aggregating across
+    the ensemble should use either (a) raw-count-sum then shares, or
+    (b) mean of per-sim shares — median-per-share alone does not
+    preserve the sum-to-100 invariant.
     """
     sub = df[df.year == year].copy()
     sub['total'] = (sub.trans_undiagnosed_per_year
@@ -115,14 +118,16 @@ def plot_transmission_by_stage(df, year=2024):
     xs = np.arange(len(stage_labels))
     width = 0.35
 
-    # HIVsim: 5-95th percentile
-    med  = [shares[c].median() for c in cols]
-    p05  = [shares[c].quantile(0.05) for c in cols]
-    p95  = [shares[c].quantile(0.95) for c in cols]
-    yerr = np.array([[m - lo for m, lo in zip(med, p05)],
-                     [hi - m for m, hi in zip(med, p95)]])
-    ax.bar(xs - width/2, med, width, yerr=yerr, capsize=4,
-           color='#2b5f8a', alpha=0.85, label='HIVsim median (5-95th %ile)')
+    # HIVsim: use ensemble MEAN of per-sim shares. Each sim's shares sum to
+    # 100, so mean-across-sims also sums to 100 (which median-per-share
+    # does not). Error bars: min/max across the ensemble.
+    mean_shares = [shares[c].mean() for c in cols]
+    lo  = [shares[c].min() for c in cols]
+    hi  = [shares[c].max() for c in cols]
+    yerr = np.array([[m - l for m, l in zip(mean_shares, lo)],
+                     [h - m for m, h in zip(mean_shares, hi)]])
+    ax.bar(xs - width/2, mean_shares, width, yerr=yerr, capsize=4,
+           color='#2b5f8a', alpha=0.85, label='HIVsim ensemble mean (min-max)')
 
     # Paper B: 4-model range
     paper_med  = [(PAPER_B_2024[p][0] + PAPER_B_2024[p][1]) / 2 for p in paper]
