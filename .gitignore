@@ -7,13 +7,12 @@ __pycache__/
 .env
 .DS_Store
 
-# Simulation outputs (large, regenerable) — keep dirs but ignore contents
-outputs/*
+# Simulation outputs — parquet/jsonl too large to track, but keep figures.
+outputs/*.parquet
+outputs/*.jsonl
+outputs/*.log
 !outputs/.gitkeep
-figures/*
 !figures/.gitkeep
-*.parquet
-*.jsonl
 *.log
 
 # Editor / OS
