@@ -88,6 +88,7 @@ class HIVCascadeAnalyzer(ss.Analyzer):
         n_on_art    = on_art.sum()
         n_post_art  = (infected & post_art).sum()
         n_undiag    = (infected & ~diagnosed).sum()
+        # "Diagnosed but treatment naive" = diagnosed, never yet on ART.
         n_diag_not_on_art = (infected & diagnosed & ~on_art & ~post_art).sum()
 
         # Effective ART: on_art for >= time_to_art_efficacy steps
