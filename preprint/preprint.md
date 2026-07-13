@@ -98,7 +98,7 @@ We compare only on the standardised output indicators reported by Bansi-Matharu 
 
 We ran a 30-parameter-draw × 3-seed ensemble (90 simulations, 10 000 agents each) 1985-2040. Each draw carries the HIV-relevant posterior parameter values from the joint calibration (§2.4); stochastic seeds are paired to the source calibration via `seed = draw_idx × 1000 + sub_idx`. All 30 draws sustained the HIV epidemic through the projection window.
 
-Across the ensemble, the median HIV prevalence at 15-49 tracks the UNAIDS Zimbabwe surveillance curve through the epidemic peak (~26% at 2000) and the post-2000 decline; the empirical UNAIDS 15-49 estimate for 1990-2024 falls inside the 5-95th percentile band throughout. Whole-population PLHIV, new infections per year, and AIDS-related deaths from UNAIDS also lie inside the ensemble band, with AIDS deaths slightly overshooting the empirical 2005-2010 peak. Number on ART rises to the empirical Zimbabwe 2019 total (~1.15 million adults) and continues along the step-increasing `p_art` projection to 95% of PLHIV by 2025. The full six-panel calibration-fit comparison is shown in Supplementary Figure S1.
+Across the ensemble, the median HIV prevalence at 15-49 tracks the UNAIDS Zimbabwe surveillance curve through the epidemic peak (~26% at 2000) and the post-2000 decline; the empirical UNAIDS 15-49 estimate for 1990-2024 falls inside the 5-95th percentile band throughout. Whole-population PLHIV, new infections per year, and AIDS-related deaths from UNAIDS also lie inside the ensemble band, with AIDS deaths slightly overshooting the empirical 2005-2010 peak. Number on ART rises to the empirical Zimbabwe 2019 total (~1.15 million adults) and continues along the step-increasing `p_art` projection to 95% of PLHIV by 2025. The full six-panel calibration-fit comparison is shown in Supplementary Figure S1. Supplementary Figure S2 displays the underlying 30-draw spread, colour-coded by the calibrated male-to-female per-partnership transmission rate (β_m2f) quintile — showing that the ensemble uncertainty band reflects the joint calibration's posterior on β_m2f, with low-β draws undershooting and high-β draws overshooting the UNAIDS trajectory.
 
 ### 3.2 Comparison with the Bansi-Matharu multi-model figures
 
@@ -167,6 +167,7 @@ python plot_fig1_replica.py         # Fig 1
 python plot_fig2_replica.py         # Fig 2
 python plot_fig3_replica.py         # Fig 3
 python plot_calibration_fit.py      # Supplementary Fig S1
+python plot_calibration_spaghetti.py  # Supplementary Fig S2
 ```
 
 ---

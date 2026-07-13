@@ -88,8 +88,6 @@ def main():
     ax.set_xlabel('Year', fontsize=12)
     ax.set_ylabel('Mean age at HIV acquisition (years)', fontsize=12)
     ax.tick_params(labelsize=11)
-    ax.set_title('Mean age at HIV acquisition, Zimbabwe',
-                 fontsize=14)
     ax.grid(alpha=0.25)
     ax.legend(loc='center left', bbox_to_anchor=(1.01, 0.5), fontsize=10,
               frameon=False)

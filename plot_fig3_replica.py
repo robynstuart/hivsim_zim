@@ -112,9 +112,7 @@ def main():
     ax.legend(loc='lower center', bbox_to_anchor=(0.4, -0.42), fontsize=10,
               frameon=False, ncol=2, handlelength=1.4)
 
-    fig.suptitle('HIV transmission source by cascade stage — Zimbabwe',
-                 fontsize=14, y=1.00)
-    fig.tight_layout(rect=[0, 0.02, 1, 0.96])
+    fig.tight_layout(rect=[0, 0.02, 1, 1.0])
     out = FIG_DIR / 'fig3_replica_zim.png'
     fig.savefig(out, dpi=140, bbox_inches='tight')
     print(f'wrote {out}')

@@ -117,9 +117,7 @@ def main():
     fig.legend(handles, labels, loc='lower center', ncol=3, fontsize=11,
                bbox_to_anchor=(0.5, -0.06))
 
-    fig.suptitle('HIVsim Zimbabwe ensemble vs UNAIDS surveillance',
-                 fontsize=14, y=1.00)
-    fig.tight_layout(rect=[0, 0.04, 1, 0.96])
+    fig.tight_layout(rect=[0, 0.04, 1, 1.0])
     out = FIG_DIR / 'hivsim_vs_unaids_calibration.png'
     fig.savefig(out, dpi=140, bbox_inches='tight')
     print(f'wrote {out}')

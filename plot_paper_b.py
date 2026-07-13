@@ -100,9 +100,7 @@ def plot_cascade(df):
     axes[0].set_ylabel('Percent', fontsize=12)
     axes[0].legend(loc='lower right', fontsize=10)
 
-    fig.suptitle('HIV treatment cascade for Zimbabwe (HIVsim vs 95-95-95 target)',
-                 fontsize=14, y=1.00)
-    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.tight_layout()
     out = FIG_DIR / 'paper_b_cascade.png'
     fig.savefig(out, dpi=140, bbox_inches='tight')
     print(f'wrote {out}')
@@ -141,8 +139,6 @@ def plot_transmission_by_stage(df, year=2024):
     ax.set_xticklabels(stage_labels, fontsize=12)
     ax.tick_params(axis='y', labelsize=11)
     ax.set_ylabel(f'% of new sexual transmissions ({year})', fontsize=12)
-    ax.set_title(f'Transmission source by cascade stage, Zimbabwe {year}',
-                 fontsize=14)
     ax.grid(alpha=0.3, axis='y')
     ax.legend(fontsize=11)
     fig.tight_layout()

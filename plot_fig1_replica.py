@@ -142,9 +142,7 @@ def main():
     fig.legend(handles, labels, loc='lower center', ncol=5, fontsize=10,
                bbox_to_anchor=(0.5, -0.05))
 
-    fig.suptitle('HIVsim Zimbabwe vs Bansi-Matharu et al. 2025, Fig 1B',
-                 fontsize=14, y=1.00)
-    fig.tight_layout(rect=[0, 0.03, 1, 0.96])
+    fig.tight_layout(rect=[0, 0.03, 1, 1.0])
 
     out = FIG_DIR / 'fig1_replica_zim.png'
     fig.savefig(out, dpi=140, bbox_inches='tight')
