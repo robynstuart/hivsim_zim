@@ -22,6 +22,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from utils import set_font
+
+set_font(size=11)
+
 REPO = Path(__file__).resolve().parent
 OUT = REPO / 'outputs' / 'zimbabwe_validation.parquet'
 FIG_DIR = REPO / 'figures'

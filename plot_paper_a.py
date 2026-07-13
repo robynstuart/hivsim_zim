@@ -22,6 +22,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from utils import set_font
+
+set_font(size=11)
+
 REPO = Path(__file__).resolve().parent
 OUT = REPO / 'outputs' / 'zimbabwe_validation.parquet'
 FIG_DIR = REPO / 'figures'
@@ -53,12 +57,18 @@ def ensemble_summary(df, col):
 
 
 def load_calibration_target():
-    """The whole-pop calibration target (data/zimbabwe_hiv_calib.csv)."""
+    """Zimbabwe HIV time series (data/zimbabwe_hiv_calib.csv).
+
+    Contains whole-pop counts (hiv_n_infected, hiv_new_infections,
+    hiv_new_deaths) plus the UNAIDS 15-49 prevalence estimate,
+    which is what Paper A calibrated against.
+    """
     p = REPO / 'data' / 'zimbabwe_hiv_calib.csv'
     if not p.exists():
         return None
     d = pd.read_csv(p)
     d['hiv_prevalence_pct'] = d['hiv_prevalence'] * 100
+    d['hiv_prevalence_15_49_pct'] = d['hiv_prevalence_15_49'] * 100
     return d
 
 
@@ -95,8 +105,8 @@ def main():
     plot_panel(axes[0, 0], df, 'prev_15_49_pct',
                'HIV prevalence, 15-49', '%',
                published_ranges=PAPER_A_RANGES['prev_15_49_pct'],
-               calib_target=calib, calib_col='hiv_prevalence_pct',
-               calib_label='Whole-pop calibration target (UNAIDS)')
+               calib_target=calib, calib_col='hiv_prevalence_15_49_pct',
+               calib_label='UNAIDS 15-49 estimate')
 
     plot_panel(axes[0, 1], df, 'inc_15_49_per1000py',
                'HIV incidence, 15-49', 'per 1000 person-years',
