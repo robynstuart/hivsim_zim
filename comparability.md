@@ -39,6 +39,6 @@ into `reference/`. See `ANALYSIS_PLAN.md` §7 for the scoring convention.
 
 ## Open questions to resolve on the next iteration
 
-- Digitise year-by-year traces from the Taramusi paper (once PDF available) and swap the point ranges for full curves in `paper_a_overlay.png`.
+- If Taramusi 2025 five-model traces become available, add them as a secondary overlay on `hivsim_vs_unaids_calibration.png`.
 - Sub-select the ensemble to HIV-well-fit draws (hiv_dist < 0.01 vs empirical whole-pop target of 9.35%) and quote *both* the full-ensemble and HIV-fit-subset central tendencies — the paper's audience will want to see both.
 - Consider whether the ART supply cap should be relaxed for the projection window (post-2021), and re-run with a scaling / logistic-cap policy that matches paper A's "status quo continuation" definition rather than a hard historical cap.

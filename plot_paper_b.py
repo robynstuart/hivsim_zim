@@ -24,7 +24,7 @@ import pandas as pd
 
 from utils import set_font
 
-set_font(size=11)
+set_font(size=13)
 
 REPO = Path(__file__).resolve().parent
 OUT = REPO / 'outputs' / 'zimbabwe_validation.parquet'
@@ -79,7 +79,7 @@ def transmission_shares_at_year(df, year):
 
 
 def plot_cascade(df):
-    fig, axes = plt.subplots(1, 3, figsize=(15, 4.5), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(10, 5), sharey=True)
     cascades = [
         ('prop_diagnosed',     '1st 95: Diagnosed among PLHIV'),
         ('prop_diag_on_art',   '2nd 95: On ART among diagnosed'),
@@ -89,18 +89,19 @@ def plot_cascade(df):
         c = cascade_summary(df, col)
         ax.fill_between(c.year, c.p05 * 100, c.p95 * 100, alpha=0.25, color='#2b5f8a',
                         label='HIVsim 5-95th %ile')
-        ax.plot(c.year, c['median'] * 100, color='#2b5f8a', lw=2, label='HIVsim median')
-        ax.axhline(95, color='#c44e52', ls='--', lw=1.2, label='95% target')
-        ax.set_title(title, fontsize=11)
+        ax.plot(c.year, c['median'] * 100, color='#2b5f8a', lw=2.2, label='HIVsim median')
+        ax.axhline(95, color='#c44e52', ls='--', lw=1.4, label='95% target')
+        ax.set_title(title, fontsize=13)
+        ax.tick_params(labelsize=11)
         ax.set_xlim(2000, 2040)
         ax.set_ylim(0, 105)
         ax.grid(alpha=0.3)
-        ax.set_xlabel('Year')
-    axes[0].set_ylabel('Percent')
-    axes[0].legend(loc='lower right', fontsize=9)
+        ax.set_xlabel('Year', fontsize=11)
+    axes[0].set_ylabel('Percent', fontsize=12)
+    axes[0].legend(loc='lower right', fontsize=10)
 
     fig.suptitle('HIV treatment cascade for Zimbabwe (HIVsim vs 95-95-95 target)',
-                 fontsize=12)
+                 fontsize=14, y=1.00)
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     out = FIG_DIR / 'paper_b_cascade.png'
     fig.savefig(out, dpi=140, bbox_inches='tight')
@@ -114,7 +115,7 @@ def plot_transmission_by_stage(df, year=2024):
     cols  = ['share_undiag', 'share_diag_no', 'share_on_art', 'share_post']
     paper = ['undiagnosed', 'diag_not_on_art', 'on_art', 'post_art']
 
-    fig, ax = plt.subplots(figsize=(9, 5.5))
+    fig, ax = plt.subplots(figsize=(10, 5))
     xs = np.arange(len(stage_labels))
     width = 0.35
 
@@ -126,23 +127,24 @@ def plot_transmission_by_stage(df, year=2024):
     hi  = [shares[c].max() for c in cols]
     yerr = np.array([[m - l for m, l in zip(mean_shares, lo)],
                      [h - m for m, h in zip(mean_shares, hi)]])
-    ax.bar(xs - width/2, mean_shares, width, yerr=yerr, capsize=4,
+    ax.bar(xs - width/2, mean_shares, width, yerr=yerr, capsize=5,
            color='#2b5f8a', alpha=0.85, label='HIVsim ensemble mean (min-max)')
 
-    # Paper B: 4-model range
+    # Bansi-Matharu: 4-model range
     paper_med  = [(PAPER_B_2024[p][0] + PAPER_B_2024[p][1]) / 2 for p in paper]
     paper_yerr = np.array([[m - PAPER_B_2024[p][0] for p, m in zip(paper, paper_med)],
                            [PAPER_B_2024[p][1] - m for p, m in zip(paper, paper_med)]])
-    ax.bar(xs + width/2, paper_med, width, yerr=paper_yerr, capsize=4,
-           color='#8c564b', alpha=0.85, label='Paper B 4-model range')
+    ax.bar(xs + width/2, paper_med, width, yerr=paper_yerr, capsize=5,
+           color='#8c564b', alpha=0.85, label='Bansi-Matharu 4-model range')
 
     ax.set_xticks(xs)
-    ax.set_xticklabels(stage_labels)
-    ax.set_ylabel(f'% of new sexual transmissions ({year})')
-    ax.set_title(f'HIVsim vs Paper B: transmission source by cascade stage, Zimbabwe {year}',
-                 fontsize=12)
+    ax.set_xticklabels(stage_labels, fontsize=12)
+    ax.tick_params(axis='y', labelsize=11)
+    ax.set_ylabel(f'% of new sexual transmissions ({year})', fontsize=12)
+    ax.set_title(f'Transmission source by cascade stage, Zimbabwe {year}',
+                 fontsize=14)
     ax.grid(alpha=0.3, axis='y')
-    ax.legend()
+    ax.legend(fontsize=11)
     fig.tight_layout()
     out = FIG_DIR / 'paper_b_transmission_by_stage.png'
     fig.savefig(out, dpi=140, bbox_inches='tight')

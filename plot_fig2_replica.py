@@ -19,7 +19,7 @@ import pandas as pd
 
 from utils import set_font
 
-set_font(size=11)
+set_font(size=13)
 
 REPO = Path(__file__).resolve().parent
 OUT = REPO / 'outputs' / 'zimbabwe_validation.parquet'
@@ -65,33 +65,33 @@ def main():
     df = pd.read_parquet(OUT)
     dig = pd.read_csv(DIGITISED_CSV, comment='#')
 
-    fig, ax = plt.subplots(figsize=(10, 6.5))
+    fig, ax = plt.subplots(figsize=(10, 5))
 
     for model in ['Optima', 'Synthesis', 'PopART', 'Goals']:
         for sex in ['male', 'female']:
             m = dig[(dig.model == model) & (dig.sex == sex)].sort_values('year')
             if len(m):
                 ax.plot(m.year, m.value, color=MODEL_COLORS[model],
-                        lw=1.4, ls=LINESTYLE[sex], marker='o', ms=3,
+                        lw=1.6, ls=LINESTYLE[sex], marker='o', ms=4,
                         label=f'{model} ({sex})', alpha=0.85)
 
     hivsim = hivsim_age_summary(df)
     for sex, s in hivsim.items():
         s = s.dropna(subset=['median'])
-        # Restrict to 2000-2040 window matching the paper
         s = s[(s.year >= 2000) & (s.year <= 2040)]
         ax.fill_between(s.year, s.p05, s.p95, color=HIVSIM_COLOR, alpha=0.20)
-        ax.plot(s.year, s['median'], color=HIVSIM_COLOR, lw=2.2,
+        ax.plot(s.year, s['median'], color=HIVSIM_COLOR, lw=2.6,
                 ls=LINESTYLE[sex], label=f'HIVsim ({sex})')
 
     ax.set_xlim(2000, 2040)
     ax.set_ylim(22, 47)
-    ax.set_xlabel('Year')
-    ax.set_ylabel('Mean age at HIV acquisition (years)')
-    ax.set_title('HIVsim Zimbabwe vs Bansi-Matharu et al. 2025, Fig 2B\n'
-                 '(4 published models eyeball-digitised)', fontsize=12)
+    ax.set_xlabel('Year', fontsize=12)
+    ax.set_ylabel('Mean age at HIV acquisition (years)', fontsize=12)
+    ax.tick_params(labelsize=11)
+    ax.set_title('Mean age at HIV acquisition, Zimbabwe',
+                 fontsize=14)
     ax.grid(alpha=0.25)
-    ax.legend(loc='center left', bbox_to_anchor=(1.01, 0.5), fontsize=9,
+    ax.legend(loc='center left', bbox_to_anchor=(1.01, 0.5), fontsize=10,
               frameon=False)
     fig.tight_layout()
 

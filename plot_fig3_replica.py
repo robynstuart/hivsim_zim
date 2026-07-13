@@ -24,7 +24,7 @@ import pandas as pd
 
 from utils import set_font
 
-set_font(size=11)
+set_font(size=13)
 
 REPO = Path(__file__).resolve().parent
 OUT = REPO / 'outputs' / 'zimbabwe_validation.parquet'
@@ -74,13 +74,14 @@ def plot_hivsim_panel(ax, shares, years):
         ax.bar(xs, vals, width, bottom=bottom, color=COLORS[key], label=LABELS[key],
                edgecolor='white', linewidth=0.4)
         bottom = bottom + vals
-    # x-tick labels: show every third year to match the paper style
-    show_idx = list(range(0, len(years), 3))
+    # x-tick labels: show every fifth year for legibility at 10x5
+    show_idx = list(range(0, len(years), 5))
     ax.set_xticks([xs[i] for i in show_idx])
-    ax.set_xticklabels([years[i] for i in show_idx], rotation=45, ha='right', fontsize=9)
+    ax.set_xticklabels([years[i] for i in show_idx], rotation=0, fontsize=11)
+    ax.tick_params(axis='y', labelsize=11)
     ax.set_ylim(0, 100)
-    ax.set_ylabel('Proportion of source partners (%)')
-    ax.set_title('HIVsim', fontsize=11, pad=6)
+    ax.set_ylabel('Source partners (%)', fontsize=12)
+    ax.set_title('HIVsim', fontsize=13, pad=6)
     ax.spines[['top', 'right']].set_visible(False)
 
 
@@ -89,21 +90,18 @@ def main():
     years = list(range(2000, 2041))
     shares = compute_hivsim_shares(df, years)
 
-    # Left panel: paper Fig 3B (Zimbabwe subplot images embedded as reference)
-    fig = plt.figure(figsize=(14, 6.5))
+    fig = plt.figure(figsize=(10, 5))
     gs = fig.add_gridspec(1, 2, width_ratios=[1.05, 1.0], wspace=0.15)
 
     ax_ref = fig.add_subplot(gs[0, 0])
     ref_path = REPO / 'reference' / 'fig3_zim.jpg'
     if ref_path.exists():
         img = mpimg.imread(ref_path)
-        # Crop to Zimbabwe (B) block. The paper's Fig 3 stacks 3 country
-        # blocks vertically; Zimbabwe (B) sits ~38-64% of the way down.
         h = img.shape[0]
         zim_block = img[int(h * 0.38):int(h * 0.64)]
         ax_ref.imshow(zim_block)
-        ax_ref.set_title('Bansi-Matharu et al. 2025, Fig 3B (Zimbabwe): 4 published models',
-                         fontsize=11, pad=6)
+        ax_ref.set_title('Bansi-Matharu 2025, Fig 3B\n(4 published models)',
+                         fontsize=12, pad=6)
     else:
         ax_ref.text(0.5, 0.5, 'reference/fig3_zim.jpg not found',
                     ha='center', va='center', transform=ax_ref.transAxes)
@@ -111,12 +109,12 @@ def main():
 
     ax = fig.add_subplot(gs[0, 1])
     plot_hivsim_panel(ax, shares, years)
-    ax.legend(loc='lower left', bbox_to_anchor=(0.0, -0.55), fontsize=9,
+    ax.legend(loc='lower center', bbox_to_anchor=(0.4, -0.42), fontsize=10,
               frameon=False, ncol=2, handlelength=1.4)
 
-    fig.suptitle('Ongoing HIV transmission source by cascade stage — Zimbabwe',
-                 fontsize=12, y=0.99)
-    fig.tight_layout()
+    fig.suptitle('HIV transmission source by cascade stage — Zimbabwe',
+                 fontsize=14, y=1.00)
+    fig.tight_layout(rect=[0, 0.02, 1, 0.96])
     out = FIG_DIR / 'fig3_replica_zim.png'
     fig.savefig(out, dpi=140, bbox_inches='tight')
     print(f'wrote {out}')

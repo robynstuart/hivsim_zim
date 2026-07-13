@@ -26,7 +26,7 @@ import pandas as pd
 
 from utils import set_font
 
-set_font(size=11)
+set_font(size=13)
 
 REPO = Path(__file__).resolve().parent
 OUT = REPO / 'outputs' / 'zimbabwe_validation.parquet'
@@ -58,14 +58,14 @@ def plot_paper_lines(ax, dig, metric, scale=1.0):
         m = sub[sub.model == model].sort_values('year')
         if len(m):
             ax.plot(m.year, m.value * scale, color=MODEL_COLORS[model],
-                    lw=1.6, marker='o', ms=3, label=model, alpha=0.9)
+                    lw=1.8, marker='o', ms=4, label=model, alpha=0.9)
 
 
 def plot_hivsim(ax, df, col, scale=1.0):
     s = hivsim_summary(df, col)
     ax.fill_between(s.year, s.p05 * scale, s.p95 * scale,
                     color=HIVSIM_COLOR, alpha=0.20)
-    ax.plot(s.year, s['median'] * scale, color=HIVSIM_COLOR, lw=2.0,
+    ax.plot(s.year, s['median'] * scale, color=HIVSIM_COLOR, lw=2.4,
             label='HIVsim')
 
 
@@ -76,76 +76,75 @@ def main():
     # Derive HIVsim columns
     df['prev_15_64_pct'] = df.n_infected_15_64 / df.n_alive_15_64 * 100
 
-    fig, axes = plt.subplots(3, 2, figsize=(13, 12), sharex=True)
+    fig, axes = plt.subplots(2, 3, figsize=(10, 5), sharex=True)
 
     # Panel 1: population size 15-64
     ax = axes[0, 0]
     plot_paper_lines(ax, dig, 'pop_15_64')
     plot_hivsim(ax, df, 'n_alive_15_64')
-    ax.set_title('Population size (aged 15-64 years)')
-    ax.set_ylabel('People')
+    ax.set_title('Population 15-64', fontsize=12)
+    ax.set_ylabel('People', fontsize=11)
     ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
     # Panel 2: HIV prev (15-64)
     ax = axes[0, 1]
     plot_paper_lines(ax, dig, 'prev')
     plot_hivsim(ax, df, 'prev_15_64_pct')
-    ax.set_title('HIV prevalence (%), 15-64')
-    ax.set_ylabel('%')
+    ax.set_title('HIV prevalence 15-64 (%)', fontsize=12)
+    ax.set_ylabel('%', fontsize=11)
     ax.set_ylim(0, 22)
 
     # Panel 3: new infections/year (whole-pop from paper; 15-64 from HIVsim)
-    ax = axes[1, 0]
+    ax = axes[0, 2]
     plot_paper_lines(ax, dig, 'new_inf')
     plot_hivsim(ax, df, 'new_infections_per_year')
-    ax.set_title('Number of new HIV infections per year')
-    ax.set_ylabel('People')
+    ax.set_title('New HIV infections / year', fontsize=12)
+    ax.set_ylabel('People', fontsize=11)
     ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
     # Panel 4: proportion diagnosed
-    ax = axes[1, 1]
+    ax = axes[1, 0]
     plot_paper_lines(ax, dig, 'p_dx')
     plot_hivsim(ax, df, 'prop_diagnosed', scale=100)
-    ax.set_title('Proportion of PLHIV diagnosed (%)')
-    ax.set_ylabel('%')
+    ax.set_title('PLHIV diagnosed (%)', fontsize=12)
+    ax.set_ylabel('%', fontsize=11)
     ax.set_ylim(0, 105)
 
-    # Panel 5: proportion of PLHIV on ART. HIVsim doesn't expose this directly
-    # so compute n_on_art / plhiv.
+    # Panel 5: proportion of PLHIV on ART.
     df['p_on_art_of_plhiv'] = df.n_on_art / df.plhiv * 100
-    ax = axes[2, 0]
+    ax = axes[1, 1]
     plot_paper_lines(ax, dig, 'p_on_art')
     plot_hivsim(ax, df, 'p_on_art_of_plhiv')
-    ax.set_title('Proportion of PLHIV receiving ART (%)')
-    ax.set_ylabel('%')
+    ax.set_title('PLHIV on ART (%)', fontsize=12)
+    ax.set_ylabel('%', fontsize=11)
     ax.set_ylim(0, 105)
 
-    # Panel 6: proportion of on-ART virally suppressed. HIVsim proxy:
-    # prop_art_effective is "on ART past efficacy ramp" as fraction of on-ART.
-    ax = axes[2, 1]
+    # Panel 6: proportion of on-ART virally suppressed (proxy).
+    ax = axes[1, 2]
     plot_paper_lines(ax, dig, 'p_vls')
     plot_hivsim(ax, df, 'prop_art_effective', scale=100)
-    ax.set_title('Proportion of on-ART virally suppressed (%)')
-    ax.set_ylabel('%')
+    ax.set_title('On-ART virally suppressed (%)', fontsize=12)
+    ax.set_ylabel('%', fontsize=11)
     ax.set_ylim(0, 105)
 
     for ax in axes.flat:
         ax.set_xlim(2000, 2040)
-        ax.set_xlabel('Year')
+        ax.tick_params(labelsize=10)
         ax.grid(alpha=0.25)
+    for ax in axes[1, :]:
+        ax.set_xlabel('Year', fontsize=11)
 
-    # Single figure-level legend
     handles, labels = [], []
     for ax in axes.flat:
         for h, l in zip(*ax.get_legend_handles_labels()):
             if l not in labels:
                 handles.append(h); labels.append(l)
     fig.legend(handles, labels, loc='lower center', ncol=5, fontsize=10,
-               bbox_to_anchor=(0.5, -0.01))
+               bbox_to_anchor=(0.5, -0.05))
 
-    fig.suptitle('HIVsim Zimbabwe vs Bansi-Matharu et al. 2025, Fig 1B '
-                 '(4 published models eyeball-digitised)', fontsize=12)
-    fig.tight_layout(rect=[0, 0.02, 1, 0.97])
+    fig.suptitle('HIVsim Zimbabwe vs Bansi-Matharu et al. 2025, Fig 1B',
+                 fontsize=14, y=1.00)
+    fig.tight_layout(rect=[0, 0.03, 1, 0.96])
 
     out = FIG_DIR / 'fig1_replica_zim.png'
     fig.savefig(out, dpi=140, bbox_inches='tight')
