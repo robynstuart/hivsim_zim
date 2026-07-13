@@ -67,7 +67,7 @@ Within 3 days:
 ## 5. Technical setup
 
 - Stack: HIVsim on the Starsim framework, Python. Use internal calibration tooling (Optuna or Starsim calibration) only if a re-run is needed; the default is to load the existing calibrated Zimbabwe configuration.
-- Repo and calibrated model location: **[FILL: repo URL and path to the calibrated Zimbabwe model and calibration artifacts]**.
+- Repo and calibrated model location: `git@github.com:robynstuart/hivsim_zim.git`. Model in `model.py` + `hiv_model.py`; calibration artifacts (500-draw exp-06 kseed calibration) in `calibration/artifacts/`. Source calibration lives in the private `sti_notification` repo.
 - Reproducibility: fix random seeds, run enough stochastic realisations to give stable central estimates and an uncertainty band, log the exact config, and commit a single `run_zimbabwe_validation.py` entry point plus a notebook that regenerates every figure from saved outputs.
 - Output structure (suggested):
   ```
@@ -146,7 +146,7 @@ Use it to state plainly which indicators are like-for-like, which are only broad
 
 ## 10. Inputs needed from Robyn
 
-- **[FILL]** Repo URL and path to the calibrated Zimbabwe model and calibration artifacts.
+- ~~Repo URL and path to the calibrated Zimbabwe model and calibration artifacts.~~ Resolved: `git@github.com:robynstuart/hivsim_zim.git`; model in `model.py`/`hiv_model.py`; calibration artifacts in `calibration/artifacts/`.
 - **[FILL]** Adam's EMOD-HIV comparison progress and any artifacts to fold in.
 - **[FILL]** The exact figures or panels from each paper to target first (if we want to prioritise a subset given the 3-day window).
 - **[FILL]** Author list and target preprint server (for example medRxiv).
