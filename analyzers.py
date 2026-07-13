@@ -48,6 +48,16 @@ class HIVCascadeAnalyzer(ss.Analyzer):
             ss.Result('new_trans_diag_not_on_art',    dtype=float),
             ss.Result('new_trans_on_art',             dtype=float),
             ss.Result('new_trans_post_art',           dtype=float),
+            # Paper B Fig 1B: population + prev + new-infections at 15-64
+            ss.Result('n_alive_15_64',       dtype=float),
+            ss.Result('n_infected_15_64',    dtype=float),
+            ss.Result('new_infections_15_64', dtype=float),
+            # Paper B Fig 2B: mean age at HIV acquisition, by sex.
+            # Accumulate sum(age) + count per timestep; divide at plot time.
+            ss.Result('age_sum_new_inf_f',  dtype=float),
+            ss.Result('age_sum_new_inf_m',  dtype=float),
+            ss.Result('n_new_inf_f',        dtype=float),
+            ss.Result('n_new_inf_m',        dtype=float),
         )
 
     def _time_to_art_efficacy_steps(self, sim):
@@ -100,6 +110,30 @@ class HIVCascadeAnalyzer(ss.Analyzer):
         r.n_diag_not_on_art[ti]   = n_diag_not_on_art
         r.n_on_art_effective[ti]  = n_on_art_effective
         r.n_post_art[ti]          = n_post_art
+
+        # Paper B Fig 1B: 15-64 aggregates (source is people.age; we filter
+        # to alive agents via auids).
+        people = sim.people
+        auids  = people.auids
+        ages_alive = np.asarray(people.age.raw)[auids]
+        female_alive = np.asarray(people.female.raw)[auids]
+        infected_alive = np.asarray(infected.raw)[auids]
+        band_15_64 = (ages_alive >= 15) & (ages_alive < 65)
+        r.n_alive_15_64[ti]    = int(band_15_64.sum())
+        r.n_infected_15_64[ti] = int((band_15_64 & infected_alive).sum())
+
+        # Paper B Fig 2B: mean age at acquisition, by sex.
+        # `ti_infected == ti` marks agents newly infected this step. Filter
+        # to alive agents so we don't include historical/dead uids.
+        ti_infected_alive = np.asarray(hiv.ti_infected.raw)[auids]
+        newly_infected = ti_infected_alive == ti
+        r.new_infections_15_64[ti] = int((newly_infected & band_15_64).sum())
+        newly_f = newly_infected & female_alive
+        newly_m = newly_infected & ~female_alive
+        r.n_new_inf_f[ti]        = int(newly_f.sum())
+        r.n_new_inf_m[ti]        = int(newly_m.sum())
+        r.age_sum_new_inf_f[ti]  = float(ages_alive[newly_f].sum())
+        r.age_sum_new_inf_m[ti]  = float(ages_alive[newly_m].sum())
 
         # Transmission attribution: sources that transmitted at this step.
         # `ti_transmitted_sex` is set to the current ti for each source that

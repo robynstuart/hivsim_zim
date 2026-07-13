@@ -144,6 +144,15 @@ def run_one(task):
         'trans_diag_not_on_art_per_month': np.asarray(casc.new_trans_diag_not_on_art),
         'trans_on_art_per_month':          np.asarray(casc.new_trans_on_art),
         'trans_post_art_per_month':        np.asarray(casc.new_trans_post_art),
+        # Paper B Fig 1B: 15-64 population + prevalence (matches paper age band)
+        'n_alive_15_64':      np.asarray(casc.n_alive_15_64),
+        'n_infected_15_64':   np.asarray(casc.n_infected_15_64),
+        'new_infections_15_64_per_month': np.asarray(casc.new_infections_15_64),
+        # Paper B Fig 2B: sum-of-ages + count of new infections, by sex
+        'age_sum_new_inf_f_per_month': np.asarray(casc.age_sum_new_inf_f),
+        'age_sum_new_inf_m_per_month': np.asarray(casc.age_sum_new_inf_m),
+        'n_new_inf_f_per_month':       np.asarray(casc.n_new_inf_f),
+        'n_new_inf_m_per_month':       np.asarray(casc.n_new_inf_m),
     })
 
     # Aggregate monthly -> annual. For rates (prev, inc) take the mean over
@@ -169,6 +178,15 @@ def run_one(task):
         'trans_diag_not_on_art_per_month': 'sum',
         'trans_on_art_per_month':          'sum',
         'trans_post_art_per_month':        'sum',
+        # 15-64 aggregates: pop + infected = end-of-year snapshot; new infs sum
+        'n_alive_15_64':                   'last',
+        'n_infected_15_64':                'last',
+        'new_infections_15_64_per_month':  'sum',
+        # Mean age at acquisition: sum ages + counts, divide post-agg
+        'age_sum_new_inf_f_per_month':     'sum',
+        'age_sum_new_inf_m_per_month':     'sum',
+        'n_new_inf_f_per_month':           'sum',
+        'n_new_inf_m_per_month':           'sum',
     }
     annual = df.groupby(['year', 'draw_idx', 'sub_idx', 'seed'], as_index=False).agg(agg)
     annual = annual.rename(columns={
@@ -178,6 +196,11 @@ def run_one(task):
         'trans_diag_not_on_art_per_month': 'trans_diag_not_on_art_per_year',
         'trans_on_art_per_month':          'trans_on_art_per_year',
         'trans_post_art_per_month':        'trans_post_art_per_year',
+        'new_infections_15_64_per_month':  'new_infections_15_64_per_year',
+        'age_sum_new_inf_f_per_month':     'age_sum_new_inf_f_per_year',
+        'age_sum_new_inf_m_per_month':     'age_sum_new_inf_m_per_year',
+        'n_new_inf_f_per_month':           'n_new_inf_f_per_year',
+        'n_new_inf_m_per_month':           'n_new_inf_m_per_year',
     })
     return annual
 
