@@ -22,7 +22,7 @@ LOCATION = 'zimbabwe'
 DATA_DIR = 'data'
 
 
-def make_networks():
+def make_networks(dur_recall=ss.years(0.25)):
     sexual = sti.StructuredSexual(
         prop_f0=0.67, prop_m0=0.55,
         prop_f2=0.10, prop_m2=0.20,
@@ -35,7 +35,7 @@ def make_networks():
         client_shares=ss.bernoulli(p=0.20),
         sw_seeking_rate=ss.permonth(20),
     )
-    return [sexual, ss.MaternalNet()]
+    return [sexual, sti.PriorPartners(dur_recall=dur_recall), ss.MaternalNet()]
 
 
 def apply_calib_pars(sim, calib_pars):
