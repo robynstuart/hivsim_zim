@@ -8,6 +8,7 @@ import pandas as pd
 import starsim as ss
 import stisim as sti
 
+from analyzers import HIVCascadeAnalyzer
 from hiv_model import make_hiv, make_hiv_intvs
 
 LOCATION = 'zimbabwe'
@@ -81,6 +82,7 @@ def make_sim(seed=1, n_agents=1e4, start=1985, stop=2040,
         diseases=[hiv],
         networks=networks,
         interventions=interventions,
+        analyzers=[HIVCascadeAnalyzer()],
     )
     # Apply calib pars BEFORE init: while sim.pars containers are still lists.
     # After sim.init() they become objdicts/ndicts and the list-iteration

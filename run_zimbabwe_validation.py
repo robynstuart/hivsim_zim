@@ -116,6 +116,9 @@ def run_one(task):
     new_deaths = np.asarray(hiv.new_deaths)  # AIDS-related deaths
     n_diagnosed = np.asarray(hiv.n_diagnosed)
 
+    # Paper B: cascade + transmission-by-stage from HIVCascadeAnalyzer
+    casc = res.hivcascadeanalyzer
+
     df = pd.DataFrame({
         'year': year,
         'draw_idx': int(draw_idx),
@@ -128,10 +131,19 @@ def run_one(task):
         'plhiv': plhiv,
         'n_on_art': n_on_art,
         'aids_deaths_per_month': new_deaths,
-        # Ancillary (useful for Paper B cascade prep)
+        # Ancillary (used for Paper B cascade denominators + validation)
         'n_diagnosed': n_diagnosed,
         'n_infected_15_49': n_inf_15_49,
         'n_alive_15_49': n_alive_15_49,
+        # Paper B: cascade proportions
+        'prop_diagnosed':     np.asarray(casc.prop_diagnosed),
+        'prop_diag_on_art':   np.asarray(casc.prop_diag_on_art),
+        'prop_art_effective': np.asarray(casc.prop_art_effective),
+        # Paper B: transmission-by-stage (per timestep counts)
+        'trans_undiagnosed_per_month':     np.asarray(casc.new_trans_undiagnosed),
+        'trans_diag_not_on_art_per_month': np.asarray(casc.new_trans_diag_not_on_art),
+        'trans_on_art_per_month':          np.asarray(casc.new_trans_on_art),
+        'trans_post_art_per_month':        np.asarray(casc.new_trans_post_art),
     })
 
     # Aggregate monthly -> annual. For rates (prev, inc) take the mean over
@@ -148,11 +160,24 @@ def run_one(task):
         'n_diagnosed':              'last',
         'n_infected_15_49':         'last',
         'n_alive_15_49':            'last',
+        # Cascade proportions: end-of-year snapshot
+        'prop_diagnosed':          'last',
+        'prop_diag_on_art':        'last',
+        'prop_art_effective':      'last',
+        # Transmission-by-stage: sum monthly counts to annual
+        'trans_undiagnosed_per_month':     'sum',
+        'trans_diag_not_on_art_per_month': 'sum',
+        'trans_on_art_per_month':          'sum',
+        'trans_post_art_per_month':        'sum',
     }
     annual = df.groupby(['year', 'draw_idx', 'sub_idx', 'seed'], as_index=False).agg(agg)
     annual = annual.rename(columns={
         'new_infections_per_month': 'new_infections_per_year',
         'aids_deaths_per_month':    'aids_deaths_per_year',
+        'trans_undiagnosed_per_month':     'trans_undiagnosed_per_year',
+        'trans_diag_not_on_art_per_month': 'trans_diag_not_on_art_per_year',
+        'trans_on_art_per_month':          'trans_on_art_per_year',
+        'trans_post_art_per_month':        'trans_post_art_per_year',
     })
     return annual
 
