@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+.pytest_cache/
+.venv/
+.env
+.DS_Store
+
+# Simulation outputs (large, regenerable) — keep dirs but ignore contents
+outputs/*
+!outputs/.gitkeep
+figures/*
+!figures/.gitkeep
+*.parquet
+*.jsonl
+*.log
+
+# Editor / OS
+.vscode/
+.idea/
