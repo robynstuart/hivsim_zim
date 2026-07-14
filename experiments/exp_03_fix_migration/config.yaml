@@ -1,0 +1,25 @@
+# Exp 03: point-value scan of migration.rel_migration
+# All other priors are held at their prior midpoints (from priors.py at
+# the exp_02-close commit).
+
+n_seeds: 5
+n_agents: 10000
+start: 1985
+stop: 2040
+
+# Fixed values for the 6 non-migration parameters
+fixed_pars:
+  hiv.beta_m2f: 0.0225
+  hiv.rel_init_prev: 0.9
+  hiv.dur_on_art: 6
+  structuredsexual.prop_f0: 0.725
+  structuredsexual.m2_conc: 5.0
+  structuredsexual.dur_sw: 8.5
+
+# Scan values for rel_migration
+rel_migration_values: [0.5, 1.0, 1.5]
+
+targets_csv: data/zimbabwe_hiv_calib.csv
+
+starsim: main@79cbdd52
+stisim: rc1.5.10@543f13c
