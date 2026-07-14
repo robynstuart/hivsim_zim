@@ -72,7 +72,7 @@ def make_sim(seed=1, n_agents=1e4, start=1985, stop=2040,
     simpars = dict(
         rand_seed=seed, n_agents=n_agents,
         start=start, stop=stop,
-        use_migration=False, verbose=verbose,
+        use_migration=True, verbose=verbose,
         total_pop=8.7e6,  # actual 1985 Zimbabwe population
     )
     sim = sti.Sim(

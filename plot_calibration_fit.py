@@ -43,15 +43,16 @@ def ensemble_summary(df, col):
 def load_calibration_target():
     """Zimbabwe HIV surveillance data (data/zimbabwe_hiv_calib.csv).
 
-    Whole-population counts (hiv_n_infected, hiv_new_infections,
-    hiv_new_deaths) plus the UNAIDS 15-49 prevalence estimate.
+    Dot-notation columns matching sim results: hiv.prevalence, hiv.n_infected,
+    hiv.new_infections, hiv.new_deaths, hiv.prevalence_15_49, plus whole-pop
+    n_alive (implied denominator from UNAIDS).
     """
     p = REPO / 'data' / 'zimbabwe_hiv_calib.csv'
     if not p.exists():
         return None
     d = pd.read_csv(p)
-    d['hiv_prevalence_pct'] = d['hiv_prevalence'] * 100
-    d['hiv_prevalence_15_49_pct'] = d['hiv_prevalence_15_49'] * 100
+    d['hiv_prevalence_pct'] = d['hiv.prevalence'] * 100
+    d['hiv_prevalence_15_49_pct'] = d['hiv.prevalence_15_49'] * 100
     return d
 
 
@@ -90,12 +91,12 @@ def main():
 
     plot_panel(axes[0, 2], df, 'new_infections_per_year',
                'New HIV infections per year (all ages)', 'count',
-               calib_target=calib, calib_col='hiv_new_infections',
+               calib_target=calib, calib_col='hiv.new_infections',
                calib_label='UNAIDS estimate')
 
     plot_panel(axes[1, 0], df, 'plhiv',
                'People living with HIV (all ages)', 'count',
-               calib_target=calib, calib_col='hiv_n_infected',
+               calib_target=calib, calib_col='hiv.n_infected',
                calib_label='UNAIDS estimate')
 
     plot_panel(axes[1, 1], df, 'n_on_art',
@@ -103,7 +104,7 @@ def main():
 
     plot_panel(axes[1, 2], df, 'aids_deaths_per_year',
                'AIDS-related deaths per year (all ages)', 'count',
-               calib_target=calib, calib_col='hiv_new_deaths',
+               calib_target=calib, calib_col='hiv.new_deaths',
                calib_label='UNAIDS estimate')
 
     for ax in axes[1, :]:

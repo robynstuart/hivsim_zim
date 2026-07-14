@@ -1,0 +1,35 @@
+# Exp 01 configuration snapshot
+# Env vars picked up by run.py at execution time; keep this in sync with
+# the values that produced outputs/coverage_check_mig_v2.parquet.
+
+n_draws: 50
+n_workers: 30
+n_agents: 10000
+lhs_seed: 45
+
+# Prior ranges (also live in hivsim_zim/priors.py; recorded here for provenance)
+priors:
+  hiv.beta_m2f:              {low: 0.005, high: 0.03, log: false}
+  hiv.rel_init_prev:         {low: 0.3,   high: 1.5,  log: false}
+  hiv.dur_on_art:            {low: 2,     high: 10,   log: false}
+  migration.rel_migration:   {low: 0.5,   high: 1.2,  log: false}
+  structuredsexual.prop_f0:  {low: 0.55,  high: 0.90, log: false}
+  structuredsexual.m2_conc:  {low: 2.0,   high: 8.0,  log: false}
+  structuredsexual.dur_sw:   {low: 2,     high: 15,   log: false}
+
+# Target result columns pulled from sim.results via dot notation.
+# Auto-registered by sti.Calibration through ss.validate_sim_data.
+targets_csv: data/zimbabwe_hiv_calib.csv
+result_cols:
+  - hiv.prevalence
+  - hiv.n_infected
+  - hiv.new_infections
+  - hiv.new_deaths
+  - hiv.prevalence_15_49
+  - hiv.prevalence_f
+  - hiv.prevalence_m
+  - n_alive
+
+# Software versions at run time
+starsim: main@79cbdd52
+stisim: rc1.5.10@543f13c

@@ -36,8 +36,8 @@ FIG_DIR.mkdir(exist_ok=True)
 def load_calibration_target():
     p = REPO / 'data' / 'zimbabwe_hiv_calib.csv'
     d = pd.read_csv(p)
-    d['hiv_prevalence_pct'] = d['hiv_prevalence'] * 100
-    d['hiv_prevalence_15_49_pct'] = d['hiv_prevalence_15_49'] * 100
+    d['hiv_prevalence_pct'] = d['hiv.prevalence'] * 100
+    d['hiv_prevalence_15_49_pct'] = d['hiv.prevalence_15_49'] * 100
     return d
 
 
@@ -81,17 +81,17 @@ def main():
 
     plot_panel(axes[1], df, 'plhiv',
                'PLHIV (all ages)', 'count',
-               calib, 'hiv_n_infected')
+               calib, 'hiv.n_infected')
     axes[1].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
     plot_panel(axes[2], df, 'new_infections_per_year',
                'New infections / year', 'count',
-               calib, 'hiv_new_infections')
+               calib, 'hiv.new_infections')
     axes[2].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
     plot_panel(axes[3], df, 'aids_deaths_per_year',
                'AIDS-related deaths / year', 'count',
-               calib, 'hiv_new_deaths')
+               calib, 'hiv.new_deaths')
     axes[3].ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
     for ax in axes:
