@@ -15,7 +15,9 @@ LOCATION = 'zimbabwe'
 DATA_DIR = 'data'
 
 
-def make_networks(dur_recall=ss.years(0.25)):
+def make_networks(dur_recall=ss.years(0.25), condom_data=None):
+    if condom_data is None:
+        condom_data = pd.read_csv(f'{DATA_DIR}/condom_use.csv')
     sexual = sti.StructuredSexual(
         prop_f0=0.67, prop_m0=0.55,
         prop_f2=0.10, prop_m2=0.20,
@@ -23,7 +25,7 @@ def make_networks(dur_recall=ss.years(0.25)):
         f1_conc=0.15, m1_conc=0.20,
         f2_conc=1.0, m2_conc=4.4,
         recall_prior=True,
-        condom_data=pd.read_csv(f'{DATA_DIR}/condom_use.csv'),
+        condom_data=condom_data,
         fsw_shares=ss.bernoulli(p=0.10),
         client_shares=ss.bernoulli(p=0.20),
         sw_seeking_rate=ss.permonth(20),
@@ -66,11 +68,11 @@ DEM_MODULES = {'migration', 'pregnancy', 'deaths'}
 
 
 def make_sim(seed=1, n_agents=1e4, start=1985, stop=2040,
-             calib_pars=None, verbose=1/12):
+             calib_pars=None, verbose=1/12, condom_data=None):
     """Build a Zimbabwe HIV sim. 1985 default start matches the calibration."""
     hiv = make_hiv()
     interventions = make_hiv_intvs()
-    networks = make_networks()
+    networks = make_networks(condom_data=condom_data)
 
     # Demographics come from the 'zimbabwe' location string and are only
     # resolved into modules during sti.Sim's init. Params targeting those

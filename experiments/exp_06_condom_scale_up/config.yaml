@@ -1,0 +1,36 @@
+# Exp 06 configuration.
+
+n_draws_per_scenario: 30
+n_workers: 30
+n_agents: 10000
+lhs_seed: 45
+
+# Fixed:
+#   rel_migration = 0.5 (model.py::make_sim)
+#   ART driven by data/p_art.csv (hiv_model.py::make_hiv_intvs)
+
+priors:
+  hiv.beta_m2f:              {low: 0.005, high: 0.04, log: false}
+  hiv.rel_init_prev:         {low: 0.3,   high: 1.5,  log: false}
+  hiv.dur_on_art:            {low: 2,     high: 10,   log: false}
+  structuredsexual.prop_f0:  {low: 0.55,  high: 0.90, log: false}
+  structuredsexual.m2_conc:  {low: 2.0,   high: 8.0,  log: false}
+  structuredsexual.dur_sw:   {low: 2,     high: 15,   log: false}
+
+# Condom scenarios: only cross-risk partnerships change (the ones that
+# currently plateau at 0.70 from 2005-2015). Pre-2005 unchanged across
+# all three; marital (0,0)/(1,1)/(2,2) and FSW-client unchanged in all.
+scenarios:
+  current:
+    # As-is from data/condom_use.csv
+  modest:
+    cross_risk_2010: 0.80
+    cross_risk_2015: 0.85
+    cross_risk_2020: 0.90
+  aggressive:
+    cross_risk_2010: 0.90
+    cross_risk_2015: 0.95
+    cross_risk_2020: 0.95
+
+starsim: main@79cbdd52
+stisim: rc1.5.10@543f13c
