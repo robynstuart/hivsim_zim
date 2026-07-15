@@ -160,8 +160,8 @@ def main():
         for h, l in zip(*ax.get_legend_handles_labels()):
             if l not in labels:
                 handles.append(h); labels.append(l)
-    fig.legend(handles, labels, loc='lower center', ncol=5, fontsize=10,
-               bbox_to_anchor=(0.5, -0.05))
+    fig.legend(handles, labels, loc='lower center', ncol=len(labels),
+               fontsize=8, frameon=False, bbox_to_anchor=(0.5, -0.03))
 
     fig.tight_layout(rect=[0, 0.03, 1, 1.0])
 
