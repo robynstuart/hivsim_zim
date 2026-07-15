@@ -62,12 +62,30 @@ def apply_calib_pars(sim, calib_pars):
     return sim
 
 
+DEM_MODULES = {'migration', 'pregnancy', 'deaths'}
+
+
 def make_sim(seed=1, n_agents=1e4, start=1985, stop=2040,
              calib_pars=None, verbose=1/12):
     """Build a Zimbabwe HIV sim. 1985 default start matches the calibration."""
     hiv = make_hiv()
     interventions = make_hiv_intvs()
     networks = make_networks()
+
+    # Demographics come from the 'zimbabwe' location string and are only
+    # resolved into modules during sti.Sim's init. Params targeting those
+    # modules must be routed through the dem_pars kwarg — apply_calib_pars
+    # can't touch them post-hoc because sim.pars.demographics is still a
+    # string at that point.
+    # rel_migration=0.5 fixed from exp_03 point-value scan: halves the
+    # UN-WPP net migration outflows to match Zimbabwe pop 1990-2024 within
+    # ~3% at every UNAIDS survey year.
+    calib_pars = dict(calib_pars or {})
+    dem_pars = {'rel_migration': 0.5}
+    for key in list(calib_pars):
+        mod_name, par = key.split('.', 1)
+        if mod_name in DEM_MODULES:
+            dem_pars[par] = calib_pars.pop(key)
 
     simpars = dict(
         rand_seed=seed, n_agents=n_agents,
@@ -79,14 +97,15 @@ def make_sim(seed=1, n_agents=1e4, start=1985, stop=2040,
         pars=simpars,
         datafolder=f'{DATA_DIR}/',
         demographics=LOCATION,
+        dem_pars=dem_pars,
         diseases=[hiv],
         networks=networks,
         interventions=interventions,
         analyzers=[HIVCascadeAnalyzer()],
     )
-    # Apply calib pars BEFORE init: while sim.pars containers are still lists.
-    # After sim.init() they become objdicts/ndicts and the list-iteration
-    # in apply_calib_pars silently no-ops.
+    # Apply remaining calib pars BEFORE init: while sim.pars containers are
+    # still lists. After sim.init() they become objdicts/ndicts and the
+    # list-iteration in apply_calib_pars silently no-ops.
     apply_calib_pars(sim, calib_pars)
     return sim
 
