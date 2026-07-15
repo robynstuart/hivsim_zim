@@ -44,10 +44,10 @@ def make_hiv():
 
 
 def make_hiv_intvs():
-    n_art = pd.read_csv('data/n_art.csv').set_index('year')
+    p_art = pd.read_csv('data/p_art.csv').set_index('year')
     n_vmmc = pd.read_csv('data/n_vmmc.csv').set_index('year')
     fsw_testing, other_testing, low_cd4_testing = get_testing_products()
-    art = sti.ART(coverage=n_art)
+    art = sti.ART(coverage=p_art)
     vmmc = sti.VMMC(coverage=n_vmmc)
     prep = sti.Prep()
 

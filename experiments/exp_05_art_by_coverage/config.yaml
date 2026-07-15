@@ -1,0 +1,35 @@
+# Exp 05 configuration.
+
+n_draws: 50
+n_workers: 30
+n_agents: 10000
+lhs_seed: 45
+
+# Fixed:
+#   rel_migration = 0.5 hardcoded in model.py::make_sim (exp_03).
+#   ART coverage switched from n_art (absolute) to p_art (fraction)
+#   in hiv_model.py::make_hiv_intvs. p_art_data lives in data/p_art.csv.
+
+priors:
+  hiv.beta_m2f:              {low: 0.005, high: 0.04, log: false}
+  hiv.rel_init_prev:         {low: 0.3,   high: 1.5,  log: false}
+  hiv.dur_on_art:            {low: 2,     high: 10,   log: false}
+  structuredsexual.prop_f0:  {low: 0.55,  high: 0.90, log: false}
+  structuredsexual.m2_conc:  {low: 2.0,   high: 8.0,  log: false}
+  structuredsexual.dur_sw:   {low: 2,     high: 15,   log: false}
+
+targets_csv: data/zimbabwe_hiv_calib.csv
+art_data_csv: data/p_art.csv
+result_cols:
+  - hiv.prevalence_15_49
+  - hiv.prevalence_f
+  - hiv.prevalence_m
+  - hiv.n_infected
+  - hiv.n_on_art
+  - hiv.p_on_art
+  - hiv.new_infections
+  - hiv.new_deaths
+  - n_alive
+
+starsim: main@79cbdd52
+stisim: rc1.5.10@543f13c
