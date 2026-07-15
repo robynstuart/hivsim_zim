@@ -1,0 +1,27 @@
+# Exp 08 configuration.
+
+n_draws: 50
+n_workers: 30
+n_agents: 10000
+lhs_seed: 45
+
+# Fixed:
+#   rel_migration = 0.5 (model.py::make_sim)
+#   ART driven by data/p_art.csv
+#   Condoms: aggressive schedule from exp_06 (locked via runner)
+
+priors:
+  hiv.beta_m2f:              {low: 0.005, high: 0.04, log: false}
+  hiv.rel_init_prev:         {low: 0.3,   high: 1.5,  log: false}
+  hiv.dur_on_art:            {low: 8,     high: 25,   log: false}
+  hiv.rel_death:             {low: 0.5,   high: 2.5,  log: false}
+  hiv.rel_death_on_art:      {low: 0.1,   high: 2.0,  log: false}
+  structuredsexual.prop_f0:  {low: 0.55,  high: 0.90, log: false}
+  structuredsexual.m2_conc:  {low: 2.0,   high: 8.0,  log: false}
+  structuredsexual.dur_sw:   {low: 2,     high: 15,   log: false}
+
+targets_csv: data/zimbabwe_hiv_calib.csv
+art_data_csv: data/p_art.csv
+
+starsim: main@79cbdd52
+stisim: feat/hiv-death-rate-pars@4517819
