@@ -50,20 +50,33 @@ STOP = 2041  # inclusive of 2040 output
 AGE_BANDS_15_49 = ['15_20', '20_25', '25_30', '30_35', '35_50']
 
 
-def load_calib_pars(draws_row):
-    """Extract the HIV-relevant parameter values from one draws row.
+CROSS_RISK = ['(0,1)', '(0,2)', '(1,0)', '(1,2)', '(2,0)', '(2,1)']
 
-    The draws CSV came from a joint HIV + STI calibration. For the HIV-only
-    model here, only the HIV + network columns are meaningful. Log-scale
-    columns are prefixed `log_`.
-    """
-    return {
-        'hiv.beta_m2f':             float(draws_row['hiv.beta_m2f']),
-        'hiv.rel_init_prev':        float(draws_row['hiv.rel_init_prev']),
-        'structuredsexual.prop_f0': float(draws_row['structuredsexual.prop_f0']),
-        'structuredsexual.m2_conc': float(draws_row['structuredsexual.m2_conc']),
-        'structuredsexual.dur_sw':  float(draws_row['structuredsexual.dur_sw']),
-    }
+
+def aggressive_condom_df():
+    """Locked cross-risk condom schedule from exp_06 (aggressive scenario).
+    Matches the schedule used by exp_08/09 during LHS ranking."""
+    d = pd.read_csv(REPO / 'data' / 'condom_use.csv')
+    bumps = {'2010': 0.90, '2015': 0.95, '2020': 0.95}
+    for pship in CROSS_RISK:
+        row_idx = d.index[d.partnership == pship]
+        for col, val in bumps.items():
+            d.loc[row_idx, col] = val
+    return d
+
+
+CALIB_PAR_COLS = [
+    'hiv.beta_m2f', 'hiv.rel_init_prev',
+    'hiv.dur_on_art', 'hiv.rel_death', 'hiv.rel_death_on_art',
+    'structuredsexual.prop_f0', 'structuredsexual.m2_conc',
+    'structuredsexual.dur_sw',
+]
+
+
+def load_calib_pars(draws_row):
+    """Extract parameter values from one draws row. Missing columns are
+    silently skipped (older calibration CSVs pre-date some priors)."""
+    return {c: float(draws_row[c]) for c in CALIB_PAR_COLS if c in draws_row}
 
 
 def run_one(task):
@@ -76,7 +89,8 @@ def run_one(task):
     seed = int(draw_idx) * 1000 + int(sub_idx)
 
     sim = make_sim(seed=seed, start=START, stop=STOP,
-                   n_agents=N_AGENTS, calib_pars=calib_pars, verbose=0)
+                   n_agents=N_AGENTS, calib_pars=calib_pars, verbose=0,
+                   condom_data=aggressive_condom_df())
     sim.run()
 
     res = sim.results

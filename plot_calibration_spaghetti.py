@@ -28,7 +28,7 @@ set_font(size=13)
 
 REPO = Path(__file__).resolve().parent
 OUT = REPO / 'outputs' / 'zimbabwe_validation.parquet'
-DRAWS_CSV = REPO / 'calibration' / 'artifacts' / 'draws_sustaining_top30.csv'
+DRAWS_CSV = REPO / 'experiments' / 'exp_09_extended_lhs' / 'outputs' / 'draws_top50.csv'
 FIG_DIR = REPO / 'figures'
 FIG_DIR.mkdir(exist_ok=True)
 

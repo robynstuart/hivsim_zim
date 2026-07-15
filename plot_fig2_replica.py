@@ -1,11 +1,18 @@
 """
-Replica of Bansi-Matharu et al. 2025 (Lancet GH) Figure 2B — Zimbabwe.
+Replica of Bansi-Matharu et al. 2025 (Lancet GH) Figure 1B — Zimbabwe.
 
-Mean age at HIV acquisition (years), by sex, for the 4 published models +
-HIVsim overlay. Published-model traces are eyeball-digitised from
-`reference/fig2_zim.jpg` (+/- 1-2 years precision); HIVsim uses the
-ensemble mean of age at acquisition per year, computed by the
-HIVCascadeAnalyzer.
+Six panels for the 4 published models + HIVsim overlay:
+    1) Population size (aged 15-64 years)
+    2) HIV prevalence (%)
+    3) Number of new HIV infections per year
+    4) Proportion of PLHIV who are diagnosed (%)
+    5) Proportion of PLHIV receiving ART (%)
+    6) Proportion of on-ART who are virally suppressed (%)
+
+The 4 published-model traces are eyeball-digitised from
+`reference/fig1_zim.jpg` at ~5-year intervals into
+`reference/paper_b_fig1_zimbabwe_digitised.csv`; precision +/- 3-5%.
+HIVsim is shown as the ensemble median + 5-95th percentile band.
 
 Usage:
     python plot_fig2_replica.py
@@ -14,7 +21,6 @@ Usage:
 from pathlib import Path
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 from utils import set_font
@@ -24,74 +30,140 @@ set_font(size=13)
 REPO = Path(__file__).resolve().parent
 OUT = REPO / 'outputs' / 'zimbabwe_validation.parquet'
 FIG_DIR = REPO / 'figures'
-DIGITISED_CSV = REPO / 'reference' / 'paper_b_fig2_zimbabwe_digitised.csv'
+DIGITISED_CSV = REPO / 'reference' / 'paper_b_fig1_zimbabwe_digitised.csv'
 FIG_DIR.mkdir(exist_ok=True)
 
 MODEL_COLORS = {
-    'Optima':    '#2b8ea1',
-    'Synthesis': '#e2b64e',
-    'PopART':    '#3e8f57',
-    'Goals':     '#8b6ba1',
+    'Optima':    '#2b8ea1',   # cyan
+    'Synthesis': '#e2b64e',   # yellow
+    'PopART':    '#3e8f57',   # green
+    'Goals':     '#8b6ba1',   # purple/lavender
 }
-HIVSIM_COLOR = '#c44e52'
-LINESTYLE = {'male': '-', 'female': '--'}
+HIVSIM_COLOR = '#c44e52'      # red for contrast
 
 
-def hivsim_age_summary(df):
-    """Compute HIVsim mean age at acquisition per year, by sex.
+def hivsim_summary(df, col):
+    g = df.groupby('year')[col]
+    return pd.DataFrame({
+        'median': g.median(),
+        'p05':    g.quantile(0.05),
+        'p95':    g.quantile(0.95),
+    }).reset_index()
 
-    Groups across draws x seeds: sum ages numerator, sum counts denominator,
-    take ratio -> per-draw-sim mean. Ensemble summarised as median + 5-95th.
-    """
-    d = df.copy()
-    d['mean_age_f'] = np.where(d.n_new_inf_f_per_year > 0,
-                               d.age_sum_new_inf_f_per_year / d.n_new_inf_f_per_year,
-                               np.nan)
-    d['mean_age_m'] = np.where(d.n_new_inf_m_per_year > 0,
-                               d.age_sum_new_inf_m_per_year / d.n_new_inf_m_per_year,
-                               np.nan)
-    out = {}
-    for sex, col in [('female', 'mean_age_f'), ('male', 'mean_age_m')]:
-        g = d.groupby('year')[col]
-        out[sex] = pd.DataFrame({
-            'median': g.median(),
-            'p05':    g.quantile(0.05),
-            'p95':    g.quantile(0.95),
-        }).reset_index()
-    return out
+
+def plot_paper_lines(ax, dig, metric, scale=1.0):
+    sub = dig[dig.metric == metric]
+    for model in ['Optima', 'Synthesis', 'PopART', 'Goals']:
+        m = sub[sub.model == model].sort_values('year')
+        if len(m):
+            ax.plot(m.year, m.value * scale, color=MODEL_COLORS[model],
+                    lw=1.8, marker='o', ms=4, label=model, alpha=0.9)
+
+
+def plot_hivsim(ax, df, col, scale=1.0):
+    s = hivsim_summary(df, col)
+    ax.fill_between(s.year, s.p05 * scale, s.p95 * scale,
+                    color=HIVSIM_COLOR, alpha=0.20)
+    ax.plot(s.year, s['median'] * scale, color=HIVSIM_COLOR, lw=2.4,
+            label='HIVsim')
+
+
+UNAIDS_COLOR = '#4a2545'
+
+
+def plot_unaids(ax, targets, col, scale=1.0, label='UNAIDS'):
+    t = targets.dropna(subset=[col])
+    ax.scatter(t.time, t[col] * scale, s=20, color=UNAIDS_COLOR, marker='D',
+               zorder=6, label=label)
+
+
+def load_unaids():
+    df = pd.read_csv(REPO / 'data' / 'zimbabwe_hiv_calib.csv')
+    art_n = pd.read_csv(REPO / 'data' / 'n_art.csv').rename(columns={'year': 'time'})
+    art_p = pd.read_csv(REPO / 'data' / 'p_art.csv').rename(columns={'year': 'time'})
+    return df.merge(art_n[['time', 'n_art']], on='time', how='left') \
+             .merge(art_p, on='time', how='left')
 
 
 def main():
     df = pd.read_parquet(OUT)
     dig = pd.read_csv(DIGITISED_CSV, comment='#')
+    unaids = load_unaids()
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    # Derive HIVsim columns
+    df['prev_15_64_pct'] = df.n_infected_15_64 / df.n_alive_15_64 * 100
 
-    for model in ['Optima', 'Synthesis', 'PopART', 'Goals']:
-        for sex in ['male', 'female']:
-            m = dig[(dig.model == model) & (dig.sex == sex)].sort_values('year')
-            if len(m):
-                ax.plot(m.year, m.value, color=MODEL_COLORS[model],
-                        lw=1.6, ls=LINESTYLE[sex], marker='o', ms=4,
-                        label=f'{model} ({sex})', alpha=0.85)
+    fig, axes = plt.subplots(2, 3, figsize=(10, 5), sharex=True)
 
-    hivsim = hivsim_age_summary(df)
-    for sex, s in hivsim.items():
-        s = s.dropna(subset=['median'])
-        s = s[(s.year >= 2000) & (s.year <= 2040)]
-        ax.fill_between(s.year, s.p05, s.p95, color=HIVSIM_COLOR, alpha=0.20)
-        ax.plot(s.year, s['median'], color=HIVSIM_COLOR, lw=2.6,
-                ls=LINESTYLE[sex], label=f'HIVsim ({sex})')
+    # Panel 1: population size 15-64
+    ax = axes[0, 0]
+    plot_paper_lines(ax, dig, 'pop_15_64')
+    plot_hivsim(ax, df, 'n_alive_15_64')
+    ax.set_title('Population 15-64', fontsize=11)
+    ax.set_ylabel('People', fontsize=10)
+    ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
 
-    ax.set_xlim(2000, 2040)
-    ax.set_ylim(22, 47)
-    ax.set_xlabel('Year', fontsize=12)
-    ax.set_ylabel('Mean age at HIV acquisition (years)', fontsize=12)
-    ax.tick_params(labelsize=11)
-    ax.grid(alpha=0.25)
-    ax.legend(loc='center left', bbox_to_anchor=(1.01, 0.5), fontsize=10,
-              frameon=False)
-    fig.tight_layout()
+    # Panel 2: HIV prev (15-64) + UNAIDS 15-49 overlay (as reference — 15-64
+    # has no direct UNAIDS series so we anchor with 15-49 which sits above).
+    ax = axes[0, 1]
+    plot_paper_lines(ax, dig, 'prev')
+    plot_hivsim(ax, df, 'prev_15_64_pct')
+    plot_unaids(ax, unaids, 'hiv.prevalence_15_49', scale=100,
+                label='UNAIDS')
+    ax.set_title('HIV prevalence (%)', fontsize=11)
+    ax.set_ylabel('%', fontsize=10)
+    ax.set_ylim(0, 30)
+
+    # Panel 3: new infections/year (whole-pop UNAIDS vs 15-64 HIVsim/paper)
+    ax = axes[0, 2]
+    plot_paper_lines(ax, dig, 'new_inf')
+    plot_hivsim(ax, df, 'new_infections_per_year')
+    plot_unaids(ax, unaids, 'hiv.new_infections', label='UNAIDS')
+    ax.set_title('New HIV infections / year', fontsize=11)
+    ax.set_ylabel('People', fontsize=10)
+    ax.ticklabel_format(axis='y', style='sci', scilimits=(0, 0))
+
+    # Panel 4: proportion diagnosed
+    ax = axes[1, 0]
+    plot_paper_lines(ax, dig, 'p_dx')
+    plot_hivsim(ax, df, 'prop_diagnosed', scale=100)
+    ax.set_title('PLHIV diagnosed (%)', fontsize=11)
+    ax.set_ylabel('%', fontsize=10)
+    ax.set_ylim(0, 105)
+
+    # Panel 5: proportion of PLHIV on ART.
+    df['p_on_art_of_plhiv'] = df.n_on_art / df.plhiv * 100
+    ax = axes[1, 1]
+    plot_paper_lines(ax, dig, 'p_on_art')
+    plot_hivsim(ax, df, 'p_on_art_of_plhiv')
+    ax.set_title('PLHIV on ART (%)', fontsize=11)
+    ax.set_ylabel('%', fontsize=10)
+    ax.set_ylim(0, 105)
+
+    # Panel 6: on-ART virally suppressed. Paper B only; HIVsim doesn't
+    # model per-agent viral suppression so no HIVsim trace.
+    ax = axes[1, 2]
+    plot_paper_lines(ax, dig, 'p_vls')
+    ax.set_title('On-ART virally suppressed (%)', fontsize=11)
+    ax.set_ylabel('%', fontsize=10)
+    ax.set_ylim(0, 105)
+
+    for ax in axes.flat:
+        ax.set_xlim(2000, 2040)
+        ax.tick_params(labelsize=9)
+        ax.grid(alpha=0.25)
+    for ax in axes[1, :]:
+        ax.set_xlabel('Year', fontsize=10)
+
+    handles, labels = [], []
+    for ax in axes.flat:
+        for h, l in zip(*ax.get_legend_handles_labels()):
+            if l not in labels:
+                handles.append(h); labels.append(l)
+    fig.legend(handles, labels, loc='lower center', ncol=5, fontsize=10,
+               bbox_to_anchor=(0.5, -0.05))
+
+    fig.tight_layout(rect=[0, 0.03, 1, 1.0])
 
     out = FIG_DIR / 'fig2_replica_zim.png'
     fig.savefig(out, dpi=140, bbox_inches='tight')

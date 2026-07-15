@@ -123,14 +123,15 @@ class HIVCascadeAnalyzer(ss.Analyzer):
         r.n_alive_15_64[ti]    = int(band_15_64.sum())
         r.n_infected_15_64[ti] = int((band_15_64 & infected_alive).sum())
 
-        # Paper B Fig 2B: mean age at acquisition, by sex.
-        # `ti_infected == ti` marks agents newly infected this step. Filter
-        # to alive agents so we don't include historical/dead uids.
+        # Paper B Fig 2B: mean age at ADULT HIV acquisition, by sex. MTC
+        # infections (age ~0) are excluded so this matches the Paper B
+        # reporting of adult mean age at acquisition.
         ti_infected_alive = np.asarray(hiv.ti_infected.raw)[auids]
         newly_infected = ti_infected_alive == ti
         r.new_infections_15_64[ti] = int((newly_infected & band_15_64).sum())
-        newly_f = newly_infected & female_alive
-        newly_m = newly_infected & ~female_alive
+        adult = ages_alive >= 15
+        newly_f = newly_infected & female_alive & adult
+        newly_m = newly_infected & ~female_alive & adult
         r.n_new_inf_f[ti]        = int(newly_f.sum())
         r.n_new_inf_m[ti]        = int(newly_m.sum())
         r.age_sum_new_inf_f[ti]  = float(ages_alive[newly_f].sum())
@@ -157,3 +158,94 @@ class HIVCascadeAnalyzer(ss.Analyzer):
             r.new_trans_diag_not_on_art[ti] = n_trans_per_src[mask_diag_no].sum()
             r.new_trans_on_art[ti]          = n_trans_per_src[mask_on_art].sum()
             r.new_trans_post_art[ti]        = n_trans_per_src[mask_post].sum()
+
+
+class NetworkSnapshot(ss.Analyzer):
+    """Capture network properties at a specified year for the supplementary
+    network figure. Ported from syph_dx_zim."""
+    def __init__(self, year=2020, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.year = year
+        self.name = 'network_snapshot'
+        self.risk_group_data = None
+        self.debut_data = None
+        self.lifetime_partners_data = None
+        self.partnership_by_age = None
+
+    def step(self):
+        if self.sim.t.yearvec[self.ti] == self.year:
+            self._capture()
+
+    def _capture(self):
+        sim = self.sim
+        nw = sim.networks.structuredsexual
+        ppl = sim.people
+        active = nw.participant & ppl.alive
+
+        rg_data = {}
+        for sex_label, sex_bool in [('Female', ppl.female), ('Male', ppl.male)]:
+            for rg in [0, 1, 2]:
+                rg_data[(sex_label, rg)] = int(((nw.risk_group == rg) & sex_bool & active).count())
+            rg_data[(sex_label, 'total')] = int((sex_bool & active).count())
+        rg_data[('Female', 'fsw')] = int((nw.fsw & ppl.female & active).count())
+        rg_data[('Male', 'client')] = int((nw.client & ppl.male & active).count())
+        self.risk_group_data = rg_data
+
+        debuted = nw.participant & ppl.alive & (ppl.age >= nw.debut)
+        lp_data = {}
+        for sex_label, sex_bool in [('Female', ppl.female), ('Male', ppl.male)]:
+            mask = sex_bool & debuted
+            lp_data[sex_label] = np.array(nw.lifetime_partners[mask])
+        self.lifetime_partners_data = lp_data
+
+        debut_data = {}
+        for sex_label, sex_bool in [('Female', ppl.female), ('Male', ppl.male)]:
+            mask = sex_bool & debuted
+            debut_data[sex_label] = np.array(nw.debut[mask])
+        self.debut_data = debut_data
+
+        age_bins = np.arange(15, 51)
+        pba = dict(age_bins=age_bins, prop_stable=[], prop_casual=[])
+        for age in age_bins:
+            in_age = ppl.female & ppl.alive & (ppl.age >= age) & (ppl.age < age + 1)
+            n_total = int(in_age.count())
+            if n_total > 0:
+                n_stable = int((in_age & (nw.stable_partners >= 1)).count())
+                n_casual = int((in_age & (nw.casual_partners >= 1)).count())
+                pba['prop_stable'].append(n_stable / n_total)
+                pba['prop_casual'].append(n_casual / n_total)
+            else:
+                pba['prop_stable'].append(np.nan)
+                pba['prop_casual'].append(np.nan)
+        pba['prop_stable'] = np.array(pba['prop_stable'])
+        pba['prop_casual'] = np.array(pba['prop_casual'])
+        self.partnership_by_age = pba
+
+
+class PartnerAgePairs(ss.Analyzer):
+    """At a specified year, records paired (male_age, female_age) for all
+    ongoing partnerships in the structuredsexual network. Feeds the F-vs-M
+    age-mixing heatmap on the network figure."""
+    def __init__(self, year=2020, network='structuredsexual', *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.year = year
+        self.network = network
+        self.name = 'partner_age_pairs'
+        self.f_ages = np.array([])
+        self.m_ages = np.array([])
+
+    def step(self):
+        if self.sim.t.yearvec[self.ti] != self.year:
+            return
+        net = self.sim.networks[self.network]
+        active = net.edges.dur > 1
+        p1 = net.p1[active]
+        p2 = net.p2[active]
+        ages = self.sim.people.age
+        female = self.sim.people.female
+        # StructuredSexual convention: p1 male, p2 female — but guard anyway.
+        p1_female = np.asarray(female[p1])
+        f_uid = np.where(p1_female, p1, p2)
+        m_uid = np.where(p1_female, p2, p1)
+        self.f_ages = np.asarray(ages[f_uid])
+        self.m_ages = np.asarray(ages[m_uid])

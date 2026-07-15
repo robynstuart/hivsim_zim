@@ -1,15 +1,11 @@
 """
-Replica of Bansi-Matharu et al. 2025 (Lancet GH) Figure 3B — Zimbabwe.
+Replica of Bansi-Matharu et al. 2025 (Lancet GH) Figure 2B — Zimbabwe.
 
-Paper Fig 3B shows proportion of source partners by treatment status
-(undiagnosed / diagnosed-not-on-ART / receiving-ART / post-ART) for
-each of the 4 models that contributed Zimbabwe outputs (PopART, Goals,
-Optima HIV, Synthesis), as stacked bars by year.
-
-This figure adds a 5th panel for HIVsim in the same style, so the user
-can compare HIVsim's cascade attribution directly against the 4 paper
-models. The 4 paper panels are shown for reference by embedding the
-Fig 3B JPEG on the left; HIVsim occupies the right.
+Mean age at HIV acquisition (years), by sex, for the 4 published models +
+HIVsim overlay. Published-model traces are eyeball-digitised from
+`reference/fig2_zim.jpg` (+/- 1-2 years precision); HIVsim uses the
+ensemble mean of age at acquisition per year, computed by the
+HIVCascadeAnalyzer.
 
 Usage:
     python plot_fig3_replica.py
@@ -17,7 +13,6 @@ Usage:
 
 from pathlib import Path
 
-import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -29,90 +24,75 @@ set_font(size=13)
 REPO = Path(__file__).resolve().parent
 OUT = REPO / 'outputs' / 'zimbabwe_validation.parquet'
 FIG_DIR = REPO / 'figures'
+DIGITISED_CSV = REPO / 'reference' / 'paper_b_fig2_zimbabwe_digitised.csv'
 FIG_DIR.mkdir(exist_ok=True)
 
-# Paper Fig 3 colour scheme (approximated from the JPEG legend)
-COLORS = {
-    'undiag':   '#8ecdd8',  # light cyan-blue
-    'diag_no':  '#f3d34a',  # yellow
-    'on_art':   '#a3c785',  # muted green
-    'post_art': '#e07068',  # coral-red
+MODEL_COLORS = {
+    'Optima':    '#2b8ea1',
+    'Synthesis': '#e2b64e',
+    'PopART':    '#3e8f57',
+    'Goals':     '#8b6ba1',
 }
-LABELS = {
-    'undiag':   'Undiagnosed',
-    'diag_no':  'Diagnosed but treatment naive',
-    'on_art':   'Receiving treatment',
-    'post_art': 'Not receiving treatment\n(after having started treatment)',
-}
+HIVSIM_COLOR = '#c44e52'
+LINESTYLE = {'male': '-', 'female': '--'}
 
 
-def compute_hivsim_shares(df, years):
-    """Ensemble transmission attribution as a % of total, summing to 100.
+def hivsim_age_summary(df):
+    """Compute HIVsim mean age at acquisition per year, by sex.
 
-    Aggregating raw counts across the ensemble FIRST (sum over draws x seeds)
-    then dividing keeps the four shares self-consistent — taking medians per
-    share independently does not. Missing years get NaN so the bars are blank.
+    Groups across draws x seeds: sum ages numerator, sum counts denominator,
+    take ratio -> per-draw-sim mean. Ensemble summarised as median + 5-95th.
     """
-    d = df[df.year.isin(years)].copy()
-    cols_raw = ['trans_undiagnosed_per_year', 'trans_diag_not_on_art_per_year',
-                'trans_on_art_per_year',      'trans_post_art_per_year']
-    agg = d.groupby('year')[cols_raw].sum()
-    totals = agg.sum(axis=1)
-    shares = agg.divide(totals.where(totals > 0, np.nan), axis=0) * 100
-    shares.columns = ['share_undiag', 'share_diag_no', 'share_on_art', 'share_post']
-    return shares.reindex(years)
-
-
-def plot_hivsim_panel(ax, shares, years):
-    xs = np.arange(len(years))
-    width = 0.85
-    bottom = np.zeros(len(years))
-    key_to_col = {'undiag': 'share_undiag', 'diag_no': 'share_diag_no',
-                  'on_art': 'share_on_art', 'post_art': 'share_post'}
-    for key in ['undiag', 'diag_no', 'on_art', 'post_art']:
-        vals = np.nan_to_num(shares[key_to_col[key]].to_numpy(), nan=0.0)
-        ax.bar(xs, vals, width, bottom=bottom, color=COLORS[key], label=LABELS[key],
-               edgecolor='white', linewidth=0.4)
-        bottom = bottom + vals
-    # x-tick labels: show every fifth year for legibility at 10x5
-    show_idx = list(range(0, len(years), 5))
-    ax.set_xticks([xs[i] for i in show_idx])
-    ax.set_xticklabels([years[i] for i in show_idx], rotation=0, fontsize=11)
-    ax.tick_params(axis='y', labelsize=11)
-    ax.set_ylim(0, 100)
-    ax.set_ylabel('Source partners (%)', fontsize=12)
-    ax.set_title('HIVsim', fontsize=13, pad=6)
-    ax.spines[['top', 'right']].set_visible(False)
+    d = df.copy()
+    d['mean_age_f'] = np.where(d.n_new_inf_f_per_year > 0,
+                               d.age_sum_new_inf_f_per_year / d.n_new_inf_f_per_year,
+                               np.nan)
+    d['mean_age_m'] = np.where(d.n_new_inf_m_per_year > 0,
+                               d.age_sum_new_inf_m_per_year / d.n_new_inf_m_per_year,
+                               np.nan)
+    out = {}
+    for sex, col in [('female', 'mean_age_f'), ('male', 'mean_age_m')]:
+        g = d.groupby('year')[col]
+        out[sex] = pd.DataFrame({
+            'median': g.median(),
+            'p05':    g.quantile(0.05),
+            'p95':    g.quantile(0.95),
+        }).reset_index()
+    return out
 
 
 def main():
     df = pd.read_parquet(OUT)
-    years = list(range(2000, 2041))
-    shares = compute_hivsim_shares(df, years)
+    dig = pd.read_csv(DIGITISED_CSV, comment='#')
 
-    fig = plt.figure(figsize=(10, 5))
-    gs = fig.add_gridspec(1, 2, width_ratios=[1.05, 1.0], wspace=0.15)
+    fig, ax = plt.subplots(figsize=(10, 5))
 
-    ax_ref = fig.add_subplot(gs[0, 0])
-    ref_path = REPO / 'reference' / 'fig3_zim.jpg'
-    if ref_path.exists():
-        img = mpimg.imread(ref_path)
-        h = img.shape[0]
-        zim_block = img[int(h * 0.38):int(h * 0.64)]
-        ax_ref.imshow(zim_block)
-        ax_ref.set_title('Bansi-Matharu 2025, Fig 3B\n(4 published models)',
-                         fontsize=12, pad=6)
-    else:
-        ax_ref.text(0.5, 0.5, 'reference/fig3_zim.jpg not found',
-                    ha='center', va='center', transform=ax_ref.transAxes)
-    ax_ref.axis('off')
+    for model in ['Optima', 'Synthesis', 'PopART', 'Goals']:
+        for sex in ['male', 'female']:
+            m = dig[(dig.model == model) & (dig.sex == sex)].sort_values('year')
+            if len(m):
+                ax.plot(m.year, m.value, color=MODEL_COLORS[model],
+                        lw=1.6, ls=LINESTYLE[sex], marker='o', ms=4,
+                        label=f'{model} ({sex})', alpha=0.85)
 
-    ax = fig.add_subplot(gs[0, 1])
-    plot_hivsim_panel(ax, shares, years)
-    ax.legend(loc='lower center', bbox_to_anchor=(0.4, -0.42), fontsize=10,
-              frameon=False, ncol=2, handlelength=1.4)
+    hivsim = hivsim_age_summary(df)
+    for sex, s in hivsim.items():
+        s = s.dropna(subset=['median'])
+        s = s[(s.year >= 2000) & (s.year <= 2040)]
+        ax.fill_between(s.year, s.p05, s.p95, color=HIVSIM_COLOR, alpha=0.20)
+        ax.plot(s.year, s['median'], color=HIVSIM_COLOR, lw=2.6,
+                ls=LINESTYLE[sex], label=f'HIVsim ({sex})')
 
-    fig.tight_layout(rect=[0, 0.02, 1, 1.0])
+    ax.set_xlim(2000, 2040)
+    ax.set_ylim(22, 47)
+    ax.set_xlabel('Year', fontsize=12)
+    ax.set_ylabel('Mean age at HIV acquisition (years)', fontsize=12)
+    ax.tick_params(labelsize=11)
+    ax.grid(alpha=0.25)
+    ax.legend(loc='center left', bbox_to_anchor=(1.01, 0.5), fontsize=10,
+              frameon=False)
+    fig.tight_layout()
+
     out = FIG_DIR / 'fig3_replica_zim.png'
     fig.savefig(out, dpi=140, bbox_inches='tight')
     print(f'wrote {out}')

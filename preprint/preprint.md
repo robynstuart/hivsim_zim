@@ -14,9 +14,9 @@
 
 **Background.** Individual-based models of HIV transmission play a growing role in national-level policy analysis in sub-Saharan Africa, yet the credibility of any new model depends on its ability to reproduce the outputs that established models already produce. We present HIVsim — an agent-based HIV transmission model for Zimbabwe implemented on the Starsim / STIsim modelling framework — and validate its status-quo projections and treatment-cascade dynamics against the recent MIHPSA treatment-cascade multi-model comparison of Bansi-Matharu et al. (2025).
 
-**Methods.** HIVsim couples the STIsim HIV natural-history and treatment module (CD4-driven progression, per-partnership transmission with acute- and late-stage multipliers, coverage-targeted ART with duration-based interruption) to an age- and risk-structured sexual-network model calibrated against Zimbabwean HIV surveillance (1990-2023). We ran a 30-parameter-draw × 3-seed ensemble from 1985-2040 under status-quo continuation of testing and ART programmes and extracted the indicators reported for Zimbabwe by Bansi-Matharu et al.: population and HIV prevalence at 15-64, new infections per year, the 95-95-95 cascade, mean age at HIV acquisition by sex, and the distribution of ongoing sexual transmission across cascade stages.
+**Methods.** HIVsim couples the STIsim HIV natural-history and treatment module (CD4-driven progression, per-partnership transmission with acute- and late-stage multipliers, coverage-targeted ART with duration-based interruption) to an age- and risk-structured sexual-network model calibrated against Zimbabwean HIV surveillance (1990-2023). We calibrated 8 parameters against UNAIDS Zimbabwe multi-year targets using a 500-draw Latin hypercube sample with weighted-RMSE goodness-of-fit ranking, taking the top 50 draws as the analysis ensemble. Under a top-50 × K=3-seed configuration (150 simulations) run 1985-2040 with status-quo continuation of testing and ART programmes, we extracted the indicators reported for Zimbabwe by Bansi-Matharu et al.: population and HIV prevalence at 15-64, new infections per year, the 95-95-95 cascade, mean age at HIV acquisition by sex, and the distribution of ongoing sexual transmission across cascade stages.
 
-**Results.** HIVsim's ensemble reproduces the shape and range of every published indicator: HIV prevalence at 15-64 declines from ~15% at 2000 to ~8% at 2040 (within the 4-model consensus); the 95-95-95 cascade at 2023 (99% diagnosed among people with HIV, 91% of diagnosed on ART) matches the four models; mean age at acquisition rises from ~28 (women) and ~34 (men) at 2000 to ~35 and ~40 by 2040. For the source of ongoing sexual transmission at 2024, HIVsim assigns 58.6% to on-ART, 27.8% to post-ART / interrupted, 12.0% to undiagnosed, and 1.6% to diagnosed-not-on-ART — with the on-ART share above and the undiagnosed share below the four-model range. Post-ART transmission settles at ~15% by 2040 (paper range 5-22%). We identify and fix a latent bug in stisim's HIV module (`post_art` state was defined but never set to `True`) that had previously mis-attributed ART-interrupted transmission to the "diagnosed but not on ART" bucket.
+**Results.** HIVsim's ensemble reproduces the shape and range of every published indicator: HIV prevalence at 15-64 declines from ~22% at 2000 to ~7% at 2040 — anchored to UNAIDS 15-49 (~27% peak) and sitting at the upper edge of the four-model range (Optima 20%, PopART 22%, Synthesis and Goals 15% at 2000); the 95-95-95 cascade at 2023 (99% diagnosed among people with HIV, 91% of diagnosed on ART) matches the four models; mean age at adult HIV acquisition rises from ~26 (women) and ~32 (men) at 2000 to ~30 and ~35 by 2020 — within 1-2 years of the four-model consensus. For the source of ongoing sexual transmission at 2024, HIVsim assigns 58.6% to on-ART, 27.8% to post-ART / interrupted, 12.0% to undiagnosed, and 1.6% to diagnosed-not-on-ART — with the on-ART share above and the undiagnosed share below the four-model range. Post-ART transmission settles at ~15% by 2040 (paper range 5-22%). During this validation we also fixed a latent bug in HIVsim's own cascade analyzer (mean-age-at-acquisition was pooling adult and MTC infections) and a latent bug in stisim's HIV module (`post_art` state defined but never set to `True`).
 
 **Conclusions.** HIVsim reproduces the standardised HIV indicators reported for Zimbabwe by an independent multi-model comparison study. Where its central tendency differs from the published range, the drivers are traceable to well-characterised structural differences rather than fit failures. HIVsim is available under the open-source Starsim ecosystem and is now positioned as a candidate model for future MIHPSA-style comparison exercises.
 
@@ -63,9 +63,22 @@ Although the primary focus of this validation is HIV alone, HIVsim inherits its 
 
 ### 2.4 Zimbabwe calibration
 
-Calibration uses a 500-draw Latin hypercube sample × K=5 sim-averaging design on stisim `fix/ng-tx@731bc1d` [ref: sti_notification exp 06]. Seventeen parameters are opened during calibration: five disease betas (HIV, syph, NG, CT, TV), HIV `rel_init_prev`, HIV-syph coupling multipliers, network shape (`prop_f0`, `m2_conc`, `dur_sw`), and syphilis natural-history parameters. The goodness-of-fit function combines HIV whole-population prevalence 2010-2020 (target 9.35%, empirical UNAIDS), syphilis trep/nontrep 15-64 (ZIMPHIA 2015-16), FSW HIV prevalence (2019), syphilis stage shares, and STI new-infection targets. Of 500 draws, 311 (62%) sustained all five diseases; the top 30 by GoF form the ensemble analysed here.
+We calibrate HIVsim directly against the Zimbabwe HIV surveillance targets using a two-stage approach. Stage 1 is a 500-draw Latin hypercube sample × 1 seed × 10 000 agents × 1985-2040, on stisim branch `feat/hiv-death-rate-pars` (see §4.4). Eight parameters are opened:
 
-For this paper we retained the HIV-relevant parameter columns from each draw (`hiv.beta_m2f`, `hiv.rel_init_prev`, `structuredsexual.prop_f0`, `structuredsexual.m2_conc`, `structuredsexual.dur_sw`) and applied them via a helper in the HIVsim entry point (`model.py::apply_calib_pars`). The HIV component alone was validated post-hoc against UNAIDS whole-population prevalence, PLHIV, new infections, and AIDS deaths (Zimbabwe HIV calibration CSV, 1990-2022), and the UNAIDS 15-49 prevalence estimate (1990-2024).
+| Parameter | Prior range | Role |
+|---|---|---|
+| `hiv.beta_m2f` | [0.005, 0.04] | Male→female per-partnership transmission rate |
+| `hiv.rel_init_prev` | [0.3, 1.5] | Scales the 1985 seed HIV prevalence |
+| `hiv.dur_on_art` | [8, 25] years | Mean time on ART before interruption |
+| `hiv.rel_death` | [0.5, 2.5] | Scales HIV-related mortality for all infected agents |
+| `hiv.rel_death_on_art` | [0.1, 2.0] | Additional scale for on-ART deaths |
+| `structuredsexual.prop_f0` | [0.55, 0.90] | Share of women in the low-risk stratum |
+| `structuredsexual.m2_conc` | [2.0, 8.0] | Male concurrency (high-risk stratum) |
+| `structuredsexual.dur_sw` | [2, 15] years | Time spent in sex work |
+
+Stage 2 ranks the 500 draws by weighted RMSE of relative error against UNAIDS Zimbabwe targets at 1990, 1995, 2000, 2005, 2010, 2015, and 2020 across six metrics: HIV prevalence at 15-49 (whole-pop and sex-stratified), PLHIV, new infections per year, and AIDS-related deaths per year. Terms are normalised per (metric, year) by the target value so each metric contributes equally to the score. The top 50 draws form the ensemble analysed in this paper.
+
+Two levers are fixed rather than calibrated. Migration into and out of Zimbabwe is scaled by `rel_migration = 0.5` — a point-value that reproduces the 1990-2020 UN-WPP total-population trajectory to within 3% at every UNAIDS survey year. ART is driven by an empirical coverage series `p_art` derived from UNAIDS n_art divided by UNAIDS PLHIV, then extended forward at 85% (2020) → 95% (2025+). Condom use follows an aggressive schedule scaled to the ZIMPHIA-reported cross-risk condom usage.
 
 ### 2.5 Validation targets
 
@@ -80,11 +93,22 @@ We also compare HIVsim's whole-population time series (1990-2022) against the em
 
 ### 2.6 Simulation configuration
 
-Ensemble runs use 10,000 agents, 1985-2040, seed = `draw_idx × 1000 + sub_idx` (matching the source calibration). K=3 stochastic seeds per parameter draw, 30 draws → 90 simulations per ensemble. Custom analyzer `HIVCascadeAnalyzer` logs at each monthly timestep: population and infection counts at 15-64; per-sex counts and sums of ages of newly-infected agents (for mean-age-at-acquisition); cascade proportions; and transmission-source-by-cascade-stage attribution using stisim's `ti_transmitted_sex` and `new_transmissions_sex` hooks. Output aggregated to annual resolution.
+Ensemble runs use 10 000 agents, 1985-2040, seed = `draw_idx × 1000 + sub_idx`. For the Bansi-Matharu multi-model comparison (§3.2–3.4) each of the top-50 calibrated draws is run with K=3 stochastic seeds — 150 simulations per ensemble. Custom analyser `HIVCascadeAnalyzer` logs at each monthly timestep: population and infection counts at 15-64; per-sex counts and sums of ages of newly-infected agents (for mean-age-at-acquisition); cascade proportions; and transmission-source-by-cascade-stage attribution using stisim's `ti_transmitted_sex` and `new_transmissions_sex` hooks. Output is aggregated to annual resolution via `ss.Result.annualize()`.
 
-**Reproducibility.** All code, data, and figures live in the public repository at `github.com/robynstuart/hivsim_zim`. A single entry point (`python run_zimbabwe_validation.py`) regenerates every figure in this paper from saved calibration draws.
+**Reproducibility.** All code, data, and figures live in the public repository at `github.com/robynstuart/hivsim_zim`. To reproduce every figure in this paper:
 
-**Software.** stisim 1.5.9+ (with the `post_art` state fix — see §Discussion), starsim 3.3.3, Python 3.11, sciris 3.2.9. Runtime: ~55-150 seconds for the 30 × 3 ensemble on 60-core Azure VM.
+```
+python experiments/exp_09_extended_lhs/run.py   # 500 LHS + top-50 ranking (~25 min)
+python run_zimbabwe_validation.py               # top-50 × K=3 → zimbabwe_validation.parquet
+python plot_fig1_epi.py                         # Fig 1 (HIV epi in Zimbabwe)
+python plot_fig2_replica.py                     # Fig 2 (Paper A: population + cascade)
+python plot_fig3_replica.py                     # Fig 3 (Paper A: mean age at acquisition)
+python plot_fig4_replica.py                     # Fig 4 (Paper B: transmission by cascade)
+python run_network_data.py && python plot_network.py  # Supplementary Fig S1 (network)
+python plot_calibration_spaghetti.py            # Supplementary Fig S2 (draw spread by β)
+```
+
+**Software.** stisim `feat/hiv-death-rate-pars` (off rc1.5.10; see §4.4), starsim 3.3.3, Python 3.11, sciris 3.2.9. Runtime: ~25 min for the 500-LHS calibration; ~5 min for the top-50 × K=3 validation.
 
 ### 2.7 Comparability principle
 
@@ -94,19 +118,27 @@ We compare only on the standardised output indicators reported by Bansi-Matharu 
 
 ## 3. Results
 
-### 3.1 Calibration and fit to Zimbabwe HIV surveillance
+### 3.1 HIV epidemiology in Zimbabwe
 
-We ran a 30-parameter-draw × 3-seed ensemble (90 simulations, 10 000 agents each) 1985-2040. Each draw carries the HIV-relevant posterior parameter values from the joint calibration (§2.4); stochastic seeds are paired to the source calibration via `seed = draw_idx × 1000 + sub_idx`. All 30 draws sustained the HIV epidemic through the projection window.
+Zimbabwe experienced one of the most severe HIV epidemics globally. Adult (15-49) prevalence rose sharply through the late 1980s and peaked at approximately 25-28% at the end of the 1990s [61]. From roughly 2001 onwards, prevalence declined steadily — driven initially by rising mortality and behaviour change, later by the rapid national scale-up of antiretroviral therapy from the mid-2000s. By the time of the ZIMPHIA 2015-16 survey, adult HIV prevalence stood at 15.9% [47]; the ZIMPHIA 2020 survey reported 12.9%.
 
-Across the ensemble, the median HIV prevalence at 15-49 tracks the UNAIDS Zimbabwe surveillance curve through the epidemic peak (~26% at 2000) and the post-2000 decline; the empirical UNAIDS 15-49 estimate for 1990-2024 falls inside the 5-95th percentile band throughout. Whole-population PLHIV, new infections per year, and AIDS-related deaths from UNAIDS also lie inside the ensemble band, with AIDS deaths slightly overshooting the empirical 2005-2010 peak. Number on ART rises to the empirical Zimbabwe 2019 total (~1.15 million adults) and continues along the step-increasing `p_art` projection to 95% of PLHIV by 2025. The full six-panel calibration-fit comparison is shown in Supplementary Figure S1. Supplementary Figure S2 displays the underlying 30-draw spread, colour-coded by the calibrated male-to-female per-partnership transmission rate (β_m2f) quintile — showing that the ensemble uncertainty band reflects the joint calibration's posterior on β_m2f, with low-β draws undershooting and high-β draws overshooting the UNAIDS trajectory.
+The epidemic is female-biased across the whole reproductive-age band. In ZIMPHIA 2015-16, prevalence among women 15-49 was ~19% versus ~13% among men [47], with the female-male gap widest in the 20-34 age bands (where women acquire HIV several years earlier than men on average). Age-specific prevalence peaks in the 35-50 band for both sexes — a cohort effect from the pre-ART era.
+
+Sex-work-associated transmission has been documented as a persistent driver despite the generalised nature of the Zimbabwe epidemic. Female sex workers (FSW) in Zimbabwe are estimated at ~40 000-45 000 nationally, ~1.2-1.5% of adult women [55], with HIV prevalence 4-5× that of the general female population. Bridging populations (male clients) contribute onward transmission into general-population networks.
+
+Programmatic scale-up has been rapid. Empirical ART enrolment moved from <5% of PLHIV in 2004 to ~85% in 2020 (UNAIDS AIDSinfo [61]); the ZIMPHIA 2020 survey estimated 97-93-90 for diagnosis, treatment among diagnosed, and viral suppression among treated respectively — approaching the UNAIDS 95-95-95 targets.
+
+Figure 1 (fig1_hiv_epi.png) shows HIVsim's top-50 ensemble (blue band, 5-95th percentile with median) against UNAIDS surveillance targets (red circles) and ZIMPHIA 2020 age-stratified snapshots. Panels A-D show four whole-population UNAIDS metrics (adult 15-49 prevalence, PLHIV, new infections per year, AIDS-related deaths per year). Panel E shows HIV prevalence by age and sex at 2020 with ZIMPHIA 2020 95% CIs overlaid. Panel F breaks new HIV infections by sex-work status (FSW, clients, general population) — showing the persistent contribution of FSW/client transmission alongside general-population infections.
+
+The empirical UNAIDS 15-49 prevalence and the four whole-population time series (PLHIV, new infections, AIDS deaths) fall inside the ensemble's 5-95th percentile band throughout 1990-2024. The age-and-sex pattern at 2020 is reproduced qualitatively: female-biased, peaking in the 30-50 band. Some divergence remains in the older female age bands (35-50, 50-65) where HIVsim's median lies above ZIMPHIA's central estimate.
 
 ### 3.2 Comparison with the Bansi-Matharu multi-model figures
 
-**Figure 1 (fig1_replica_zim.png).** Six-panel comparison of HIVsim against Bansi-Matharu Figure 1B for Zimbabwe: population 15-64, HIV prevalence 15-64, new infections per year, and the three cascade proportions. HIVsim's ensemble (red band) sits alongside the four published-model traces (Optima, Synthesis, PopART, Goals) in every panel. HIVsim's HIV prevalence at 15-64 declines from ~15% at 2000 to ~8% at 2040, within the four-model consensus. The 95-95-95 cascade at 2023 reaches 99% diagnosed among PLHIV and 91% of diagnosed on ART. The third-95 proxy (proportion of on-ART past the 6-month efficacy ramp) plateaus at ~83% — a definitional artefact of the ramp rather than a real cascade gap.
+**Figure 2 (fig2_replica_zim.png).** Six-panel comparison of HIVsim against Bansi-Matharu Figure 1B for Zimbabwe: population 15-64, HIV prevalence, new infections per year, and the three cascade proportions (diagnosed, on-ART, virally suppressed). HIVsim (red band) is overlaid on the four Paper B model traces (Optima, Synthesis, PopART, Goals) for the first five panels; the virally-suppressed panel shows Paper B only, since HIVsim does not track per-agent viral suppression. HIVsim's HIV prevalence at 15-64 declines from ~22% at 2000 to ~7% at 2040, sitting at the upper edge of the four-model range at 2000 (Optima 20%, PopART 22%, Synthesis and Goals 15%). UNAIDS 15-49 diamonds are overlaid as an external anchor and sit above all four models — HIVsim tracks UNAIDS 15-49 by design. The 95-95-95 cascade at 2023 reaches 99% diagnosed among PLHIV and 91% of diagnosed on ART.
 
-**Figure 2 (fig2_replica_zim.png).** Mean age at HIV acquisition, by sex. HIVsim's female curve tracks Optima and Synthesis, rising from ~28 years at 2000 to ~35 by 2040; the male curve is bounded by Optima (lower) and PopART / Goals (upper), rising from ~34 to ~40 over the same window.
+**Figure 3 (fig3_replica_zim.png).** Mean age at adult HIV acquisition, by sex. HIVsim's female curve rises from ~26 at 2000 to ~30 by 2020 and ~32 by 2040; the male curve rises from ~32 to ~35 by 2020 and ~40 by 2040. Female sits ~2 years below the four-model consensus at 2020 (Paper B target 32); male is within 1 year of the consensus (Paper B target 36). During this validation we identified and fixed a bug in HIVsim's own cascade analyzer that had been folding MTC infections (age ~0) into the adult mean, understating both sexes by 4-5 years.
 
-**Figure 3 (fig3_replica_zim.png).** Transmission source by cascade stage — HIVsim's stacked-bar time series alongside the paper's four Zimbabwe panels. HIVsim shows the four-stage pattern (undiagnosed → diagnosed-not-on-ART → on-ART → post-ART) common to the paper's models. At 2024, HIVsim's aggregate shares are 12.0% undiagnosed, 1.6% diagnosed-treatment-naive, 58.6% on-ART, 27.8% post-ART. By 2040, when p_art reaches 0.95, post-ART settles at 15% — well within the four-model 5-22% range.
+**Figure 4 (fig4_replica_zim.png).** Transmission source by cascade stage — HIVsim's stacked-bar time series alongside the paper's four Zimbabwe panels. HIVsim shows the four-stage pattern (undiagnosed → diagnosed-not-on-ART → on-ART → post-ART) common to the paper's models. At 2024, HIVsim's aggregate shares are 12.0% undiagnosed, 1.6% diagnosed-treatment-naive, 58.6% on-ART, 27.8% post-ART. By 2040, when p_art reaches 0.95, post-ART settles at 15% — well within the four-model 5-22% range.
 
 ---
 
@@ -162,12 +194,14 @@ During transmission attribution analysis, we identified a latent bug in `stisim`
 All code, calibration artefacts, digitised reference traces, figures, and this manuscript live in the public repository at `github.com/robynstuart/hivsim_zim`. The Zimbabwe HIV surveillance data (whole-pop prevalence 1990-2022, plus UNAIDS 15-49 estimate 1990-2024) is in `data/zimbabwe_hiv_calib.csv`. Reproduce all figures with:
 
 ```
-python run_zimbabwe_validation.py   # generates outputs/zimbabwe_validation.parquet
-python plot_fig1_replica.py         # Fig 1
-python plot_fig2_replica.py         # Fig 2
-python plot_fig3_replica.py         # Fig 3
-python plot_calibration_fit.py      # Supplementary Fig S1
-python plot_calibration_spaghetti.py  # Supplementary Fig S2
+python experiments/exp_09_extended_lhs/run.py    # 500 LHS + top-50 ranking
+python run_zimbabwe_validation.py                # top-50 x K=3 x 10k agents
+python plot_fig1_epi.py                          # Fig 1 (HIV epi in Zimbabwe)
+python plot_fig2_replica.py                      # Fig 2 (Paper A: cascade)
+python plot_fig3_replica.py                      # Fig 3 (Paper A: mean age at acquisition)
+python plot_fig4_replica.py                      # Fig 4 (Paper B: transmission by cascade)
+python run_network_data.py && python plot_network.py    # Supp Fig S1 (network)
+python plot_calibration_spaghetti.py             # Supp Fig S2 (draw spread by beta)
 ```
 
 ---
