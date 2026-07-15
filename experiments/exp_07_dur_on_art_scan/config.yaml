@@ -1,0 +1,28 @@
+# Exp 07: dur_on_art point-value scan.
+
+n_seeds: 5
+n_agents: 10000
+start: 1985
+stop: 2040
+
+fixed_pars:
+  hiv.beta_m2f: 0.0225
+  hiv.rel_init_prev: 0.9
+  structuredsexual.prop_f0: 0.725
+  structuredsexual.m2_conc: 5.0
+  structuredsexual.dur_sw: 8.5
+
+dur_on_art_values: [3, 10, 20]
+
+# Condom schedule locked in as the aggressive scenario from exp_06.
+# Cross-risk partnerships (0,1)(0,2)(1,0)(1,2)(2,0)(2,1):
+# 2010: 0.90, 2015: 0.95, 2020: 0.95.
+condom_scenario: aggressive
+
+# rel_migration = 0.5 hardcoded in model.py::make_sim from exp_03.
+# ART driven by data/p_art.csv from exp_05.
+
+targets_csv: data/zimbabwe_hiv_calib.csv
+
+starsim: main@79cbdd52
+stisim: rc1.5.10@543f13c
